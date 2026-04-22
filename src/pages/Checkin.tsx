@@ -1,11 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight, ArrowLeft, CheckCircle2, User, MessageSquare, Stethoscope,
-  Heart, Brain, Bone, Baby, Eye, Activity, Pill, Sparkles,
+  Heart, Brain, Bone, Baby, Eye, Activity, Pill, Sparkles, Mic,
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
+import HandStatusBadge from "@/components/HandStatusBadge";
+import { useHandRaise } from "@/hooks/useHandRaise";
+import { useDwellSelect } from "@/hooks/useDwellSelect";
+import { useVoiceCommands } from "@/hooks/useVoiceCommands";
 
 type StepKey = "name" | "reason" | "department" | "confirm" | "done";
 
@@ -44,8 +48,11 @@ const Checkin = () => {
   const [department, setDepartment] = useState("");
   const [token, setToken] = useState<string | null>(null);
 
+  // Hand tracking
+  const [handTrackingOn, setHandTrackingOn] = useState(false);
+  const hand = useHandRaise();
+
   const stepIndex = useMemo(() => STEPS.findIndex((s) => s.key === step), [step]);
-  const total = STEPS.length;
 
   const canNext =
     (step === "name" && name.trim().length > 1) ||
@@ -53,12 +60,17 @@ const Checkin = () => {
     (step === "department" && department !== "") ||
     step === "confirm";
 
+  // Use refs in callbacks to avoid stale-closure inside voice command handlers
+  const stateRef = useRef({ step, canNext, name });
+  useEffect(() => { stateRef.current = { step, canNext, name }; }, [step, canNext, name]);
+
   const next = () => {
-    if (step === "name") setStep("reason");
-    else if (step === "reason") setStep("department");
-    else if (step === "department") setStep("confirm");
-    else if (step === "confirm") {
-      // Generate token
+    const s = stateRef.current.step;
+    if (!stateRef.current.canNext && s !== "confirm") return;
+    if (s === "name") setStep("reason");
+    else if (s === "reason") setStep("department");
+    else if (s === "department") setStep("confirm");
+    else if (s === "confirm") {
       const t = `Q-${Math.floor(100 + Math.random() * 900)}`;
       setToken(t);
       setStep("done");
@@ -67,14 +79,79 @@ const Checkin = () => {
   };
 
   const prev = () => {
-    if (step === "reason") setStep("name");
-    else if (step === "department") setStep("reason");
-    else if (step === "confirm") setStep("department");
+    const s = stateRef.current.step;
+    if (s === "reason") setStep("name");
+    else if (s === "department") setStep("reason");
+    else if (s === "confirm") setStep("department");
+  };
+
+  // Build voice commands dynamically based on the current step
+  const commands = useMemo(() => {
+    const base: Record<string, () => void> = {
+      "next": next,
+      "continue": next,
+      "go ahead": next,
+      "back": prev,
+      "go back": prev,
+      "previous": prev,
+    };
+    if (step === "confirm") {
+      base["confirm"] = next;
+      base["check in"] = next;
+      base["submit"] = next;
+    }
+    if (step === "reason") {
+      REASONS.forEach((r) => {
+        base[r.toLowerCase()] = () => setReason(r);
+        const short = r.split(/[\s/]/)[0].toLowerCase();
+        if (short.length > 3) base[short] = () => setReason(r);
+      });
+    }
+    if (step === "department") {
+      DEPARTMENTS.forEach(({ name: n }) => {
+        base[n.toLowerCase()] = () => setDepartment(n);
+        const short = n.split(" ")[0].toLowerCase();
+        if (short.length > 3) base[short] = () => setDepartment(n);
+      });
+    }
+    return base;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  const voice = useVoiceCommands({
+    commands,
+    // Don't compete with the name search bar's own SpeechRecognition instance
+    enabled: step !== "name" && step !== "done",
+  });
+
+  // Hand cursor in viewport pixels
+  const cursor = useMemo(() => {
+    if (!handTrackingOn || !hand.active || !hand.position) return null;
+    return {
+      x: hand.position.x * window.innerWidth,
+      y: (hand.position.y * 0.6 + 0.2) * window.innerHeight,
+    };
+  }, [handTrackingOn, hand.active, hand.position]);
+
+  // Dwell — selects on the current step's option grid
+  const { register, activeId, progress } = useDwellSelect({
+    cursor,
+    onSelect: (id) => {
+      if (id.startsWith("reason:")) setReason(id.slice("reason:".length));
+      else if (id.startsWith("dept:")) setDepartment(id.slice("dept:".length));
+      else if (id === "nav:next") next();
+      else if (id === "nav:back") prev();
+    },
+  });
+
+  const toggleHand = () => {
+    if (handTrackingOn) { hand.stop(); setHandTrackingOn(false); }
+    else { hand.start(); setHandTrackingOn(true); }
   };
 
   return (
     <main className="min-h-screen flex flex-col px-8 md:px-12 py-8">
-      <KioskHeader showBack />
+      <KioskHeader showBack listening={voice.listening} />
 
       <section className="flex-1 max-w-3xl mx-auto w-full mt-10 animate-fade-in">
         {/* Progress */}
@@ -116,6 +193,22 @@ const Checkin = () => {
           </div>
         )}
 
+        {/* Voice hint banner */}
+        {step !== "name" && step !== "done" && voice.supported && (
+          <div className="flex items-center justify-center gap-2 mb-5 -mt-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass">
+              <span className="relative w-2 h-2">
+                <span className="absolute inset-0 rounded-full bg-primary" />
+                {voice.listening && <span className="absolute inset-0 rounded-full bg-primary animate-ring-pulse" />}
+              </span>
+              <Mic className="w-3.5 h-3.5 text-ink" />
+              <span className="font-mono text-[10px] uppercase tracking-widest text-ink">
+                Say "next", "back"{step === "confirm" ? ', or "confirm"' : step === "reason" || step === "department" ? ", or an option name" : ""}
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="glass rounded-3xl p-8 md:p-12 shadow-card min-h-[420px] flex flex-col">
           {step === "name" && (
             <StepShell
@@ -137,24 +230,24 @@ const Checkin = () => {
               icon={<MessageSquare className="w-7 h-7" />}
               eyebrow="Step 2 of 4"
               title={`Hi ${name.split(" ")[0]}, what brings you in?`}
-              subtitle="Pick one reason for today's visit."
+              subtitle="Pick one reason — tap, hover with your hand, or say it aloud."
             >
               <div className="grid sm:grid-cols-2 gap-3 w-full">
                 {REASONS.map((r) => {
                   const sel = reason === r;
+                  const dwellId = `reason:${r}`;
+                  const dwelling = activeId === dwellId;
                   return (
-                    <button
+                    <DwellOption
                       key={r}
+                      ref={register(dwellId)}
+                      selected={sel}
+                      dwelling={dwelling}
+                      progress={dwelling ? progress : 0}
                       onClick={() => setReason(r)}
-                      className={[
-                        "px-5 py-4 rounded-2xl text-left font-medium transition-all border-2",
-                        sel
-                          ? "bg-ink text-ink-foreground border-ink shadow-card scale-[1.02]"
-                          : "glass border-border text-ink hover:border-primary/60",
-                      ].join(" ")}
                     >
                       {r}
-                    </button>
+                    </DwellOption>
                   );
                 })}
               </div>
@@ -166,25 +259,26 @@ const Checkin = () => {
               icon={<Stethoscope className="w-7 h-7" />}
               eyebrow="Step 3 of 4"
               title="Which department?"
-              subtitle="Select the department for your visit."
+              subtitle="Tap, hover with your hand, or say a department name."
             >
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                 {DEPARTMENTS.map(({ name: n, Icon }) => {
                   const sel = department === n;
+                  const dwellId = `dept:${n}`;
+                  const dwelling = activeId === dwellId;
                   return (
-                    <button
+                    <DwellOption
                       key={n}
+                      ref={register(dwellId)}
+                      selected={sel}
+                      dwelling={dwelling}
+                      progress={dwelling ? progress : 0}
                       onClick={() => setDepartment(n)}
-                      className={[
-                        "p-4 rounded-2xl flex flex-col items-center gap-2 transition-all border-2 text-center",
-                        sel
-                          ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.05]"
-                          : "glass border-border text-ink hover:border-primary/60",
-                      ].join(" ")}
+                      tile
                     >
-                      <Icon className="w-6 h-6" strokeWidth={2.2} />
-                      <span className="text-xs font-semibold leading-tight">{n}</span>
-                    </button>
+                      <Icon className="w-6 h-6 mx-auto" strokeWidth={2.2} />
+                      <span className="text-xs font-semibold leading-tight block mt-2">{n}</span>
+                    </DwellOption>
                   );
                 })}
               </div>
@@ -196,7 +290,7 @@ const Checkin = () => {
               icon={<CheckCircle2 className="w-7 h-7" />}
               eyebrow="Step 4 of 4"
               title="Please review"
-              subtitle="Confirm your check-in details below."
+              subtitle='Confirm by tapping below or saying "confirm".'
             >
               <div className="w-full space-y-3">
                 <ReviewRow label="Name" value={name} />
@@ -239,29 +333,46 @@ const Checkin = () => {
           {/* Nav buttons */}
           {step !== "done" && (
             <div className="mt-auto pt-8 flex items-center justify-between">
-              <button
-                onClick={prev}
+              <NavButton
+                ref={register("nav:back")}
                 disabled={step === "name"}
-                className="flex items-center gap-2 px-5 py-3 rounded-full glass border border-border font-semibold text-ink disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+                dwelling={activeId === "nav:back"}
+                progress={activeId === "nav:back" ? progress : 0}
+                onClick={prev}
+                variant="ghost"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-              <button
-                onClick={next}
+              </NavButton>
+              <NavButton
+                ref={register("nav:next")}
                 disabled={!canNext}
-                className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-ink text-ink-foreground font-semibold shadow-ink disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+                dwelling={activeId === "nav:next"}
+                progress={activeId === "nav:next" ? progress : 0}
+                onClick={next}
+                variant="primary"
               >
                 {step === "confirm" ? "Confirm check-in" : "Next"}
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </NavButton>
             </div>
           )}
         </div>
       </section>
+
+      <HandStatusBadge
+        enabled={handTrackingOn}
+        onToggle={toggleHand}
+        active={hand.active}
+        confidence={hand.confidence}
+        position={hand.position}
+        error={hand.error}
+      />
     </main>
   );
 };
+
+/* ---------- Sub-components ---------- */
 
 const StepShell = ({
   icon, eyebrow, title, subtitle, children,
@@ -287,5 +398,123 @@ const ReviewRow = ({ label, value }: { label: string; value: string }) => (
     <span className="font-serif text-xl text-ink">{value || "—"}</span>
   </div>
 );
+
+interface DwellOptionProps {
+  selected: boolean;
+  dwelling: boolean;
+  progress: number;
+  onClick: () => void;
+  children: React.ReactNode;
+  tile?: boolean;
+}
+const DwellOption = (() => {
+  const Comp = (
+    { selected, dwelling, progress, onClick, children, tile = false }: DwellOptionProps,
+    ref: React.Ref<HTMLButtonElement>
+  ) => (
+    <button
+      ref={ref}
+      onClick={onClick}
+      className={[
+        "relative overflow-hidden rounded-2xl font-medium transition-all border-2",
+        tile
+          ? "p-4 flex flex-col items-center gap-1 text-center"
+          : "px-5 py-4 text-left",
+        selected
+          ? tile
+            ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.05]"
+            : "bg-ink text-ink-foreground border-ink shadow-card scale-[1.02]"
+          : dwelling
+          ? "glass border-primary text-ink scale-[1.04] shadow-glow"
+          : "glass border-border text-ink hover:border-primary/60",
+      ].join(" ")}
+    >
+      <span className="relative z-10 block">{children}</span>
+      {dwelling && !selected && (
+        <span
+          className="absolute left-0 bottom-0 h-1 bg-primary rounded-full transition-[width] duration-75"
+          style={{ width: `${progress * 100}%` }}
+        />
+      )}
+    </button>
+  );
+  Comp.displayName = "DwellOption";
+  return Object.assign(
+    // forwardRef
+    (props: DwellOptionProps & { ref?: React.Ref<HTMLButtonElement> }) => Comp(props, props.ref ?? null),
+    {}
+  );
+})();
+
+// Use real forwardRef so register() receives the DOM node
+import { forwardRef } from "react";
+const _DwellOption = forwardRef<HTMLButtonElement, DwellOptionProps>(
+  ({ selected, dwelling, progress, onClick, children, tile = false }, ref) => (
+    <button
+      ref={ref}
+      onClick={onClick}
+      className={[
+        "relative overflow-hidden rounded-2xl font-medium transition-all border-2",
+        tile ? "p-4 flex flex-col items-center gap-1 text-center" : "px-5 py-4 text-left",
+        selected
+          ? tile
+            ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.05]"
+            : "bg-ink text-ink-foreground border-ink shadow-card scale-[1.02]"
+          : dwelling
+          ? "glass border-primary text-ink scale-[1.04] shadow-glow"
+          : "glass border-border text-ink hover:border-primary/60",
+      ].join(" ")}
+    >
+      <span className="relative z-10 block">{children}</span>
+      {dwelling && !selected && (
+        <span
+          className="absolute left-0 bottom-0 h-1 bg-primary rounded-full"
+          style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+        />
+      )}
+    </button>
+  )
+);
+_DwellOption.displayName = "DwellOption";
+
+interface NavButtonProps {
+  disabled?: boolean;
+  dwelling: boolean;
+  progress: number;
+  onClick: () => void;
+  variant: "primary" | "ghost";
+  children: React.ReactNode;
+}
+const NavButton = forwardRef<HTMLButtonElement, NavButtonProps>(
+  ({ disabled, dwelling, progress, onClick, variant, children }, ref) => (
+    <button
+      ref={ref}
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "relative overflow-hidden flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-transform",
+        variant === "primary"
+          ? "bg-gradient-ink text-ink-foreground shadow-ink"
+          : "glass border border-border text-ink",
+        "disabled:opacity-30 disabled:cursor-not-allowed",
+        dwelling && !disabled && "scale-105 shadow-glow",
+      ].join(" ")}
+    >
+      <span className="relative z-10 inline-flex items-center gap-2">{children}</span>
+      {dwelling && !disabled && (
+        <span
+          className="absolute left-0 bottom-0 h-1 bg-primary"
+          style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+        />
+      )}
+    </button>
+  )
+);
+NavButton.displayName = "NavButton";
+
+// Re-export the proper forwardRef'd DwellOption under the name used above
+// (the IIFE version was a placeholder; this assignment makes the real component active)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(DwellOption as any) /* shim */;
 
 export default Checkin;
