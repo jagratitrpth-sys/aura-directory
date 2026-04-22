@@ -534,7 +534,7 @@ const Checkin = () => {
           )}
 
           {/* Nav buttons */}
-          {step !== "done" && (
+          {step !== "done" && step !== "intro" && (
             <div className="mt-auto pt-8 flex items-center justify-between">
               <NavButton
                 ref={register("nav:back")}
@@ -562,6 +562,17 @@ const Checkin = () => {
           )}
         </div>
       </section>
+
+      {/* Visual hand cursor + per-option center-zone overlay */}
+      {handTrackingOn && (
+        <DwellOverlay
+          cursor={cursor}
+          nodes={nodes}
+          activeId={activeId}
+          progress={progress}
+          centerToleranceRatio={centerToleranceRatio}
+        />
+      )}
 
       <HandStatusBadge
         enabled={handTrackingOn}
