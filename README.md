@@ -7,6 +7,9 @@ MediCare Aurora Interface
 
 
 
+The MediCare Aurora kiosk interface is deployed and available to test here:
+
+**[View Live Application]https://aura-directory.vercel.app/**
 ## 📌 Overview
 MediCare Aurora is a multimodal, zero-contact digital kiosk interface designed for public healthcare spaces. Traditional digital kiosks in hospitals, pharmacies, and clinics rely on touchscreens, which can become a major source of transmission. 
 
