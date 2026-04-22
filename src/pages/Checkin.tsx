@@ -290,7 +290,7 @@ const Checkin = () => {
 
       <section className="flex-1 max-w-3xl mx-auto w-full mt-10 animate-fade-in">
         {/* Progress */}
-        {step !== "done" && (
+        {step !== "done" && step !== "intro" && (
           <div className="flex items-center justify-center gap-3 mb-10">
             {STEPS.map((s, i) => {
               const done = i < stepIndex;
@@ -329,7 +329,7 @@ const Checkin = () => {
         )}
 
         {/* Voice hint */}
-        {step !== "name" && step !== "done" && voice.supported && (
+        {step !== "name" && step !== "done" && step !== "intro" && voice.supported && (
           <div className="flex items-center justify-center gap-2 mb-5 -mt-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass">
               <span className="relative w-2 h-2">
