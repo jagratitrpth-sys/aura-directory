@@ -8,6 +8,8 @@ interface HandStatusBadgeProps {
   confidence: number;
   position: { x: number; y: number } | null;
   error?: string | null;
+  /** Hide the built-in floating hand cursor (when another overlay draws it). */
+  hideCursor?: boolean;
 }
 
 /**
@@ -21,11 +23,12 @@ const HandStatusBadge = ({
   confidence,
   position,
   error,
+  hideCursor = false,
 }: HandStatusBadgeProps) => {
   return (
     <>
       {/* Virtual hand cursor */}
-      {enabled && active && position && (
+      {!hideCursor && enabled && active && position && (
         <div
           className="pointer-events-none fixed z-40 transition-all duration-100"
           style={{
