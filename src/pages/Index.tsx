@@ -1,76 +1,33 @@
-import { Mic, Hand, Search, Stethoscope, Pill, ClipboardCheck, Cross } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Search, Stethoscope, Pill, ClipboardCheck, Hand } from "lucide-react";
+import { Link } from "react-router-dom";
+import KioskHeader from "@/components/KioskHeader";
 
 const Index = () => {
-  const [time, setTime] = useState("");
-
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })
-      );
-    };
-    update();
-    const id = setInterval(update, 1000 * 30);
-    return () => clearInterval(id);
-  }, []);
-
   const cards = [
     {
       label: "Find a Department",
       Icon: Stethoscope,
       active: false,
+      to: "/departments",
     },
     {
       label: "Medicine Availability",
       Icon: Pill,
       active: true,
+      to: "/medicine",
     },
     {
       label: "Check-in",
       Icon: ClipboardCheck,
       active: false,
+      to: "/",
     },
   ];
 
   return (
     <main className="min-h-screen flex flex-col px-10 py-8 animate-fade-in">
-      {/* Header */}
-      <header className="flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-teal flex items-center justify-center shadow-card">
-            <Cross className="w-7 h-7 text-primary-foreground" strokeWidth={2.5} />
-          </div>
-          <div className="leading-tight">
-            <p className="text-xl font-bold text-primary tracking-tight">MediCare</p>
-            <p className="text-sm text-muted-foreground font-medium">Hospital Directory</p>
-          </div>
-        </div>
+      <KioskHeader />
 
-        {/* Center microphone */}
-        <div className="relative flex items-center justify-center">
-          <span className="absolute w-20 h-20 rounded-full bg-primary/30 animate-ring-pulse" />
-          <span className="absolute w-20 h-20 rounded-full bg-primary/20 animate-ring-pulse [animation-delay:1s]" />
-          <div className="relative w-16 h-16 rounded-full bg-gradient-teal flex items-center justify-center shadow-card animate-mic-pulse">
-            <Mic className="w-7 h-7 text-primary-foreground" strokeWidth={2.5} />
-          </div>
-          <span className="ml-4 text-sm font-semibold text-primary uppercase tracking-widest hidden md:inline">
-            Listening
-          </span>
-        </div>
-
-        {/* Time + wave */}
-        <div className="flex items-center gap-4 bg-card/80 backdrop-blur px-5 py-3 rounded-2xl shadow-card border border-border">
-          <Hand className="w-6 h-6 text-primary animate-wave origin-bottom" strokeWidth={2.2} />
-          <span className="text-2xl font-bold text-foreground tabular-nums tracking-tight">
-            {time}
-          </span>
-        </div>
-      </header>
-
-      {/* Center stage */}
       <section className="flex-1 flex flex-col items-center justify-center max-w-6xl mx-auto w-full -mt-6">
         <div className="text-center mb-10">
           <p className="text-sm font-semibold text-primary uppercase tracking-[0.3em] mb-3">
@@ -100,22 +57,19 @@ const Index = () => {
 
         {/* Action grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-12 items-stretch">
-          {cards.map(({ label, Icon, active }) => (
-            <div
+          {cards.map(({ label, Icon, active, to }) => (
+            <Link
               key={label}
+              to={to}
               className={[
                 "relative group rounded-3xl bg-card border transition-all duration-300 cursor-pointer",
                 "p-8 flex flex-col items-start justify-between min-h-[220px]",
                 active
                   ? "border-primary border-2 shadow-glow scale-[1.06] z-10 animate-glow-pulse"
-                  : "border-border shadow-card hover:scale-[1.02]",
+                  : "border-border shadow-card hover:scale-[1.02] hover:border-primary/50",
               ].join(" ")}
             >
-              {/* Hand touchless indicator */}
-              <Hand
-                className="absolute top-5 right-5 w-6 h-6 text-primary/40"
-                strokeWidth={2}
-              />
+              <Hand className="absolute top-5 right-5 w-6 h-6 text-primary/40" strokeWidth={2} />
 
               <div
                 className={[
@@ -137,14 +91,7 @@ const Index = () => {
                 {active && (
                   <div className="relative w-12 h-12 shrink-0">
                     <svg className="w-12 h-12 -rotate-90 animate-spin-slow" viewBox="0 0 48 48">
-                      <circle
-                        cx="24"
-                        cy="24"
-                        r="20"
-                        fill="none"
-                        stroke="hsl(var(--primary) / 0.15)"
-                        strokeWidth="4"
-                      />
+                      <circle cx="24" cy="24" r="20" fill="none" stroke="hsl(var(--primary) / 0.15)" strokeWidth="4" />
                       <circle
                         cx="24"
                         cy="24"
@@ -166,11 +113,10 @@ const Index = () => {
                   Selecting…
                 </span>
               )}
-            </div>
+            </Link>
           ))}
         </div>
 
-        {/* Footer hint */}
         <p className="mt-10 text-sm text-muted-foreground font-medium">
           ✋ Hold your hand over a card for 2 seconds to select · 🎙 Or speak your request aloud
         </p>
