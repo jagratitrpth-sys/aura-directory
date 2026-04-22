@@ -581,6 +581,7 @@ const Checkin = () => {
         confidence={hand.confidence}
         position={hand.position}
         error={hand.error}
+        hideCursor
       />
     </main>
   );
