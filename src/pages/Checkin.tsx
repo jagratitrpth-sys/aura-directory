@@ -149,7 +149,8 @@ const ReviewRow = ({ label, value }: { label: string; value: string }) => (
 
 const Checkin = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<StepKey>("name");
+  const [lastSnapshot] = useState<CheckinSnapshot | null>(() => loadLastCheckin());
+  const [step, setStep] = useState<StepKey>(() => (loadLastCheckin() ? "intro" : "name"));
   const [name, setName] = useState("");
   const [reason, setReason] = useState("");
   const [department, setDepartment] = useState("");
@@ -170,13 +171,30 @@ const Checkin = () => {
   const stateRef = useRef({ step, canNext });
   useEffect(() => { stateRef.current = { step, canNext }; }, [step, canNext]);
 
+  const reuseLast = () => {
+    if (!lastSnapshot) return;
+    setName(lastSnapshot.name);
+    setReason(lastSnapshot.reason);
+    setDepartment(lastSnapshot.department);
+    setStep("confirm");
+  };
+
+  const startFresh = () => {
+    setName("");
+    setReason("");
+    setDepartment("");
+    setStep("name");
+  };
+
   const next = () => {
     const s = stateRef.current.step;
+    if (s === "intro") { startFresh(); return; }
     if (!stateRef.current.canNext && s !== "confirm") return;
     if (s === "name") setStep("reason");
     else if (s === "reason") setStep("department");
     else if (s === "department") setStep("confirm");
     else if (s === "confirm") {
+      saveLastCheckin({ name, reason, department });
       const t = `Q-${Math.floor(100 + Math.random() * 900)}`;
       setToken(t);
       setStep("done");
