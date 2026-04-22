@@ -1,42 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Medical Kiosk Design System — Deep Teal #248F83 + Seafoam */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Seafoam background */
+    --background: 150 40% 96%;
+    --foreground: 180 25% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 180 25% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 180 25% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Deep Teal #248F83 -> hsl(173 60% 35%) */
+    --primary: 173 60% 35%;
+    --primary-foreground: 150 40% 98%;
+    --primary-glow: 173 65% 55%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 165 35% 92%;
+    --secondary-foreground: 173 60% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 160 25% 90%;
+    --muted-foreground: 180 12% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 173 55% 90%;
+    --accent-foreground: 173 60% 25%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 165 25% 85%;
+    --input: 165 25% 85%;
+    --ring: 173 60% 35%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
+
+    --gradient-soft: linear-gradient(180deg, hsl(150 45% 97%), hsl(160 40% 93%));
+    --gradient-teal: linear-gradient(135deg, hsl(173 60% 35%), hsl(173 65% 45%));
+    --shadow-card: 0 10px 30px -12px hsl(173 60% 35% / 0.15);
+    --shadow-glow: 0 0 0 4px hsl(173 60% 35% / 0.15), 0 20px 50px -15px hsl(173 60% 35% / 0.4);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +108,21 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-image: var(--gradient-soft);
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-teal {
+    background-image: var(--gradient-teal);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
   }
 }
