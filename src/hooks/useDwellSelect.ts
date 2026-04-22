@@ -20,6 +20,10 @@ interface UseDwellSelectReturn {
   activeId: string | null;
   /** 0..1 progress for the current dwell. */
   progress: number;
+  /** Live map of registered nodes (stable ref) — for visual overlays. */
+  nodes: React.MutableRefObject<Map<string, HTMLElement>>;
+  /** The center tolerance ratio in use, mirrored for overlays. */
+  centerToleranceRatio: number;
 }
 
 /**
@@ -120,5 +124,5 @@ export function useDwellSelect({
     return cancelTimer;
   }, [activeId, dwellMs]);
 
-  return { register, activeId, progress };
+  return { register, activeId, progress, nodes: nodesRef, centerToleranceRatio };
 }
