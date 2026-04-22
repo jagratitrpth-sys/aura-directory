@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight, ArrowLeft, CheckCircle2, User, MessageSquare, Stethoscope,
@@ -40,6 +40,107 @@ const DEPARTMENTS = [
   { name: "Pharmacy", Icon: Pill },
 ];
 
+/* ---------- Reusable bits ---------- */
+
+interface DwellOptionProps {
+  selected: boolean;
+  dwelling: boolean;
+  progress: number;
+  onClick: () => void;
+  children: React.ReactNode;
+  tile?: boolean;
+}
+const DwellOption = forwardRef<HTMLButtonElement, DwellOptionProps>(
+  ({ selected, dwelling, progress, onClick, children, tile = false }, ref) => (
+    <button
+      ref={ref}
+      onClick={onClick}
+      className={[
+        "relative overflow-hidden rounded-2xl font-medium transition-all border-2",
+        tile ? "p-4 flex flex-col items-center gap-1 text-center" : "px-5 py-4 text-left",
+        selected
+          ? tile
+            ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.05]"
+            : "bg-ink text-ink-foreground border-ink shadow-card scale-[1.02]"
+          : dwelling
+          ? "glass border-primary text-ink scale-[1.04] shadow-glow"
+          : "glass border-border text-ink hover:border-primary/60",
+      ].join(" ")}
+    >
+      <span className="relative z-10 block">{children}</span>
+      {dwelling && !selected && (
+        <span
+          className="absolute left-0 bottom-0 h-1 bg-primary"
+          style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+        />
+      )}
+    </button>
+  )
+);
+DwellOption.displayName = "DwellOption";
+
+interface NavButtonProps {
+  disabled?: boolean;
+  dwelling: boolean;
+  progress: number;
+  onClick: () => void;
+  variant: "primary" | "ghost";
+  children: React.ReactNode;
+}
+const NavButton = forwardRef<HTMLButtonElement, NavButtonProps>(
+  ({ disabled, dwelling, progress, onClick, variant, children }, ref) => (
+    <button
+      ref={ref}
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "relative overflow-hidden flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-transform",
+        variant === "primary"
+          ? "bg-gradient-ink text-ink-foreground shadow-ink"
+          : "glass border border-border text-ink",
+        "disabled:opacity-30 disabled:cursor-not-allowed",
+        dwelling && !disabled && "scale-105 shadow-glow",
+      ].join(" ")}
+    >
+      <span className="relative z-10 inline-flex items-center gap-2">{children}</span>
+      {dwelling && !disabled && (
+        <span
+          className="absolute left-0 bottom-0 h-1 bg-primary"
+          style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+        />
+      )}
+    </button>
+  )
+);
+NavButton.displayName = "NavButton";
+
+const StepShell = ({
+  icon, eyebrow, title, subtitle, children,
+}: { icon: React.ReactNode; eyebrow: string; title: string; subtitle: string; children: React.ReactNode }) => (
+  <div className="flex-1 flex flex-col">
+    <div className="flex items-center gap-3 mb-1">
+      <div className="w-12 h-12 rounded-2xl bg-gradient-ink text-ink-foreground flex items-center justify-center">
+        {icon}
+      </div>
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-primary">{eyebrow}</p>
+        <h2 className="text-3xl md:text-4xl font-serif text-ink tracking-tight">{title}</h2>
+      </div>
+    </div>
+    <p className="text-muted-foreground font-medium mt-2 mb-6">{subtitle}</p>
+    {children}
+  </div>
+);
+
+const ReviewRow = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex items-center justify-between bg-secondary/60 rounded-2xl px-5 py-4 border border-border">
+    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+    <span className="font-serif text-xl text-ink">{value || "—"}</span>
+  </div>
+);
+
+/* ---------- Page ---------- */
+
 const Checkin = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<StepKey>("name");
@@ -48,7 +149,6 @@ const Checkin = () => {
   const [department, setDepartment] = useState("");
   const [token, setToken] = useState<string | null>(null);
 
-  // Hand tracking
   const [handTrackingOn, setHandTrackingOn] = useState(false);
   const hand = useHandRaise();
 
@@ -60,9 +160,9 @@ const Checkin = () => {
     (step === "department" && department !== "") ||
     step === "confirm";
 
-  // Use refs in callbacks to avoid stale-closure inside voice command handlers
-  const stateRef = useRef({ step, canNext, name });
-  useEffect(() => { stateRef.current = { step, canNext, name }; }, [step, canNext, name]);
+  // Latest values for use inside callbacks (voice commands run from a long-lived listener)
+  const stateRef = useRef({ step, canNext });
+  useEffect(() => { stateRef.current = { step, canNext }; }, [step, canNext]);
 
   const next = () => {
     const s = stateRef.current.step;
@@ -85,7 +185,7 @@ const Checkin = () => {
     else if (s === "confirm") setStep("department");
   };
 
-  // Build voice commands dynamically based on the current step
+  // Voice command map per step
   const commands = useMemo(() => {
     const base: Record<string, () => void> = {
       "next": next,
@@ -120,11 +220,11 @@ const Checkin = () => {
 
   const voice = useVoiceCommands({
     commands,
-    // Don't compete with the name search bar's own SpeechRecognition instance
+    // The name step uses VoiceSearchBar's own SpeechRecognition — don't conflict.
     enabled: step !== "name" && step !== "done",
   });
 
-  // Hand cursor in viewport pixels
+  // Hand cursor in viewport pixels (matches HandStatusBadge mapping)
   const cursor = useMemo(() => {
     if (!handTrackingOn || !hand.active || !hand.position) return null;
     return {
@@ -133,7 +233,6 @@ const Checkin = () => {
     };
   }, [handTrackingOn, hand.active, hand.position]);
 
-  // Dwell — selects on the current step's option grid
   const { register, activeId, progress } = useDwellSelect({
     cursor,
     onSelect: (id) => {
@@ -193,7 +292,7 @@ const Checkin = () => {
           </div>
         )}
 
-        {/* Voice hint banner */}
+        {/* Voice hint */}
         {step !== "name" && step !== "done" && voice.supported && (
           <div className="flex items-center justify-center gap-2 mb-5 -mt-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass">
@@ -203,7 +302,12 @@ const Checkin = () => {
               </span>
               <Mic className="w-3.5 h-3.5 text-ink" />
               <span className="font-mono text-[10px] uppercase tracking-widest text-ink">
-                Say "next", "back"{step === "confirm" ? ', or "confirm"' : step === "reason" || step === "department" ? ", or an option name" : ""}
+                Say "next", "back"
+                {step === "confirm"
+                  ? ', or "confirm"'
+                  : step === "reason" || step === "department"
+                  ? ", or an option name"
+                  : ""}
               </span>
             </div>
           </div>
@@ -230,18 +334,17 @@ const Checkin = () => {
               icon={<MessageSquare className="w-7 h-7" />}
               eyebrow="Step 2 of 4"
               title={`Hi ${name.split(" ")[0]}, what brings you in?`}
-              subtitle="Pick one reason — tap, hover with your hand, or say it aloud."
+              subtitle="Pick one — tap, hover with your hand, or say it aloud."
             >
               <div className="grid sm:grid-cols-2 gap-3 w-full">
                 {REASONS.map((r) => {
-                  const sel = reason === r;
                   const dwellId = `reason:${r}`;
                   const dwelling = activeId === dwellId;
                   return (
                     <DwellOption
                       key={r}
                       ref={register(dwellId)}
-                      selected={sel}
+                      selected={reason === r}
                       dwelling={dwelling}
                       progress={dwelling ? progress : 0}
                       onClick={() => setReason(r)}
@@ -263,14 +366,13 @@ const Checkin = () => {
             >
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                 {DEPARTMENTS.map(({ name: n, Icon }) => {
-                  const sel = department === n;
                   const dwellId = `dept:${n}`;
                   const dwelling = activeId === dwellId;
                   return (
                     <DwellOption
                       key={n}
                       ref={register(dwellId)}
-                      selected={sel}
+                      selected={department === n}
                       dwelling={dwelling}
                       progress={dwelling ? progress : 0}
                       onClick={() => setDepartment(n)}
@@ -371,150 +473,5 @@ const Checkin = () => {
     </main>
   );
 };
-
-/* ---------- Sub-components ---------- */
-
-const StepShell = ({
-  icon, eyebrow, title, subtitle, children,
-}: { icon: React.ReactNode; eyebrow: string; title: string; subtitle: string; children: React.ReactNode }) => (
-  <div className="flex-1 flex flex-col">
-    <div className="flex items-center gap-3 mb-1">
-      <div className="w-12 h-12 rounded-2xl bg-gradient-ink text-ink-foreground flex items-center justify-center">
-        {icon}
-      </div>
-      <div>
-        <p className="font-mono text-[10px] uppercase tracking-widest text-primary">{eyebrow}</p>
-        <h2 className="text-3xl md:text-4xl font-serif text-ink tracking-tight">{title}</h2>
-      </div>
-    </div>
-    <p className="text-muted-foreground font-medium mt-2 mb-6">{subtitle}</p>
-    {children}
-  </div>
-);
-
-const ReviewRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex items-center justify-between bg-secondary/60 rounded-2xl px-5 py-4 border border-border">
-    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
-    <span className="font-serif text-xl text-ink">{value || "—"}</span>
-  </div>
-);
-
-interface DwellOptionProps {
-  selected: boolean;
-  dwelling: boolean;
-  progress: number;
-  onClick: () => void;
-  children: React.ReactNode;
-  tile?: boolean;
-}
-const DwellOption = (() => {
-  const Comp = (
-    { selected, dwelling, progress, onClick, children, tile = false }: DwellOptionProps,
-    ref: React.Ref<HTMLButtonElement>
-  ) => (
-    <button
-      ref={ref}
-      onClick={onClick}
-      className={[
-        "relative overflow-hidden rounded-2xl font-medium transition-all border-2",
-        tile
-          ? "p-4 flex flex-col items-center gap-1 text-center"
-          : "px-5 py-4 text-left",
-        selected
-          ? tile
-            ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.05]"
-            : "bg-ink text-ink-foreground border-ink shadow-card scale-[1.02]"
-          : dwelling
-          ? "glass border-primary text-ink scale-[1.04] shadow-glow"
-          : "glass border-border text-ink hover:border-primary/60",
-      ].join(" ")}
-    >
-      <span className="relative z-10 block">{children}</span>
-      {dwelling && !selected && (
-        <span
-          className="absolute left-0 bottom-0 h-1 bg-primary rounded-full transition-[width] duration-75"
-          style={{ width: `${progress * 100}%` }}
-        />
-      )}
-    </button>
-  );
-  Comp.displayName = "DwellOption";
-  return Object.assign(
-    // forwardRef
-    (props: DwellOptionProps & { ref?: React.Ref<HTMLButtonElement> }) => Comp(props, props.ref ?? null),
-    {}
-  );
-})();
-
-// Use real forwardRef so register() receives the DOM node
-import { forwardRef } from "react";
-const _DwellOption = forwardRef<HTMLButtonElement, DwellOptionProps>(
-  ({ selected, dwelling, progress, onClick, children, tile = false }, ref) => (
-    <button
-      ref={ref}
-      onClick={onClick}
-      className={[
-        "relative overflow-hidden rounded-2xl font-medium transition-all border-2",
-        tile ? "p-4 flex flex-col items-center gap-1 text-center" : "px-5 py-4 text-left",
-        selected
-          ? tile
-            ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.05]"
-            : "bg-ink text-ink-foreground border-ink shadow-card scale-[1.02]"
-          : dwelling
-          ? "glass border-primary text-ink scale-[1.04] shadow-glow"
-          : "glass border-border text-ink hover:border-primary/60",
-      ].join(" ")}
-    >
-      <span className="relative z-10 block">{children}</span>
-      {dwelling && !selected && (
-        <span
-          className="absolute left-0 bottom-0 h-1 bg-primary rounded-full"
-          style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
-        />
-      )}
-    </button>
-  )
-);
-_DwellOption.displayName = "DwellOption";
-
-interface NavButtonProps {
-  disabled?: boolean;
-  dwelling: boolean;
-  progress: number;
-  onClick: () => void;
-  variant: "primary" | "ghost";
-  children: React.ReactNode;
-}
-const NavButton = forwardRef<HTMLButtonElement, NavButtonProps>(
-  ({ disabled, dwelling, progress, onClick, variant, children }, ref) => (
-    <button
-      ref={ref}
-      onClick={onClick}
-      disabled={disabled}
-      className={[
-        "relative overflow-hidden flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-transform",
-        variant === "primary"
-          ? "bg-gradient-ink text-ink-foreground shadow-ink"
-          : "glass border border-border text-ink",
-        "disabled:opacity-30 disabled:cursor-not-allowed",
-        dwelling && !disabled && "scale-105 shadow-glow",
-      ].join(" ")}
-    >
-      <span className="relative z-10 inline-flex items-center gap-2">{children}</span>
-      {dwelling && !disabled && (
-        <span
-          className="absolute left-0 bottom-0 h-1 bg-primary"
-          style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
-        />
-      )}
-    </button>
-  )
-);
-NavButton.displayName = "NavButton";
-
-// Re-export the proper forwardRef'd DwellOption under the name used above
-// (the IIFE version was a placeholder; this assignment makes the real component active)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(DwellOption as any) /* shim */;
 
 export default Checkin;
