@@ -1,128 +1,134 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Serif&family=JetBrains+Mono:wght@500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Medical Kiosk Design System — Deep Teal #248F83 + Seafoam */
+/* MediCare Kiosk — "Aurora Clinic" theme
+   Cream paper + bio-mint + ink navy + warm coral + lavender aurora.
+*/
 
 @layer base {
   :root {
-    /* Seafoam background */
-    --background: 150 40% 96%;
-    --foreground: 180 25% 12%;
+    --background: 40 33% 96%;
+    --foreground: 220 35% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 180 25% 12%;
+    --card-foreground: 220 35% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 180 25% 12%;
+    --popover-foreground: 220 35% 11%;
 
-    /* Deep Teal #248F83 -> hsl(173 60% 35%) */
-    --primary: 173 60% 35%;
-    --primary-foreground: 150 40% 98%;
-    --primary-glow: 173 65% 55%;
+    --primary: 165 70% 38%;
+    --primary-foreground: 40 40% 98%;
+    --primary-glow: 165 80% 60%;
 
-    --secondary: 165 35% 92%;
-    --secondary-foreground: 173 60% 25%;
+    --ink: 220 45% 12%;
+    --ink-foreground: 40 33% 96%;
 
-    --muted: 160 25% 90%;
-    --muted-foreground: 180 12% 40%;
+    --accent: 14 88% 65%;
+    --accent-foreground: 220 45% 12%;
 
-    --accent: 173 55% 90%;
-    --accent-foreground: 173 60% 25%;
+    --aurora: 258 75% 70%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --secondary: 165 30% 92%;
+    --secondary-foreground: 220 45% 12%;
 
-    --border: 165 25% 85%;
-    --input: 165 25% 85%;
-    --ring: 173 60% 35%;
+    --muted: 40 20% 90%;
+    --muted-foreground: 220 15% 38%;
 
-    --radius: 1rem;
+    --destructive: 0 75% 58%;
+    --destructive-foreground: 40 40% 98%;
 
-    --gradient-soft: linear-gradient(180deg, hsl(150 45% 97%), hsl(160 40% 93%));
-    --gradient-teal: linear-gradient(135deg, hsl(173 60% 35%), hsl(173 65% 45%));
-    --shadow-card: 0 10px 30px -12px hsl(173 60% 35% / 0.15);
-    --shadow-glow: 0 0 0 4px hsl(173 60% 35% / 0.15), 0 20px 50px -15px hsl(173 60% 35% / 0.4);
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 165 70% 38%;
+
+    --radius: 1.25rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --gradient-aurora: linear-gradient(135deg,
+      hsl(165 70% 55%) 0%,
+      hsl(190 75% 55%) 35%,
+      hsl(258 75% 70%) 70%,
+      hsl(14 88% 70%) 100%);
+    --gradient-mint: linear-gradient(135deg, hsl(165 70% 38%), hsl(180 65% 45%));
+    --gradient-ink: linear-gradient(135deg, hsl(220 45% 12%), hsl(225 40% 18%));
+    --gradient-paper: radial-gradient(at 20% 10%, hsl(165 60% 92%) 0px, transparent 50%),
+                      radial-gradient(at 85% 15%, hsl(258 70% 92%) 0px, transparent 50%),
+                      radial-gradient(at 75% 85%, hsl(14 80% 92%) 0px, transparent 50%),
+                      hsl(40 33% 96%);
+
+    --shadow-card: 0 1px 0 hsl(220 35% 11% / 0.04), 0 20px 40px -20px hsl(220 35% 11% / 0.18);
+    --shadow-glow: 0 0 0 4px hsl(165 70% 38% / 0.18), 0 30px 60px -20px hsl(165 70% 38% / 0.4);
+    --shadow-ink: 0 20px 50px -20px hsl(220 45% 12% / 0.5);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 220 45% 8%;
+    --foreground: 40 33% 96%;
+    --card: 220 40% 11%;
+    --card-foreground: 40 33% 96%;
+    --popover: 220 40% 11%;
+    --popover-foreground: 40 33% 96%;
+    --primary: 165 70% 50%;
+    --primary-foreground: 220 45% 8%;
+    --secondary: 220 30% 16%;
+    --secondary-foreground: 40 33% 96%;
+    --muted: 220 30% 16%;
+    --muted-foreground: 40 15% 70%;
+    --accent: 14 88% 65%;
+    --accent-foreground: 220 45% 8%;
+    --border: 220 30% 18%;
+    --input: 220 30% 18%;
+    --ring: 165 70% 50%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-
+  * { @apply border-border; }
+  html, body, #root { min-height: 100vh; }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
-    background-image: var(--gradient-soft);
-    min-height: 100vh;
+    @apply text-foreground antialiased;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: var(--gradient-paper);
+    background-attachment: fixed;
+  }
+  .font-serif {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 }
 
 @layer utilities {
-  .bg-gradient-teal {
-    background-image: var(--gradient-teal);
+  .bg-gradient-aurora { background-image: var(--gradient-aurora); }
+  .bg-gradient-mint { background-image: var(--gradient-mint); }
+  .bg-gradient-ink { background-image: var(--gradient-ink); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+  .shadow-ink { box-shadow: var(--shadow-ink); }
+  .glass {
+    background: hsl(0 0% 100% / 0.6);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid hsl(0 0% 100% / 0.6);
   }
-  .shadow-card {
-    box-shadow: var(--shadow-card);
-  }
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
+  .glass-dark {
+    background: hsl(220 45% 12% / 0.7);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid hsl(0 0% 100% / 0.08);
   }
 }
