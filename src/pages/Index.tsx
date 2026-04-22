@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Stethoscope, Pill, ClipboardCheck, Sparkles } from "lucide-react";
+import { Stethoscope, Pill, ClipboardCheck, Sparkles, Hand } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
-import DwellCard from "@/components/DwellCard";
 import HandStatusBadge from "@/components/HandStatusBadge";
 import { useHandRaise } from "@/hooks/useHandRaise";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useDwellSelect } from "@/hooks/useDwellSelect";
 
 type CardKey = "departments" | "medicine" | "checkin";
 
@@ -31,9 +31,7 @@ const Index = () => {
   const lastActiveRef = useRef(false);
 
   const voice = useVoiceInput({
-    onFinalResult: (text) => {
-      handleQuery(text);
-    },
+    onFinalResult: (text) => handleQuery(text),
   });
 
   const handleQuery = (text: string) => {
@@ -43,38 +41,41 @@ const Index = () => {
     } else if (/(check[-\s]?in|register|appointment|visit)/.test(t)) {
       navigate("/checkin");
     } else {
-      // Default: treat as medicine search
       navigate(`/medicine?q=${encodeURIComponent(text)}`);
     }
   };
 
-  // Hand-raise trigger for voice
+  // Hand-raise → start voice
   useEffect(() => {
     if (!handTrackingOn) return;
-    if (hand.active && !lastActiveRef.current && !voice.listening) {
-      voice.start();
-    }
+    if (hand.active && !lastActiveRef.current && !voice.listening) voice.start();
     lastActiveRef.current = hand.active;
   }, [hand.active, handTrackingOn, voice]);
 
-  // Determine which card the hand is currently over (3 vertical columns)
-  const hoveredCard: CardKey | null = useMemo(() => {
+  // Convert normalized hand position to viewport pixel cursor
+  const cursor = useMemo(() => {
     if (!handTrackingOn || !hand.active || !hand.position) return null;
-    const x = hand.position.x;
-    if (x < 0.34) return "departments";
-    if (x < 0.67) return "medicine";
-    return "checkin";
+    return {
+      x: hand.position.x * window.innerWidth,
+      // HandStatusBadge maps y -> top: y*60+20%
+      y: (hand.position.y * 0.6 + 0.2) * window.innerHeight,
+    };
   }, [handTrackingOn, hand.active, hand.position]);
 
+  const { register, activeId, progress } = useDwellSelect({
+    cursor,
+    onSelect: (id) => {
+      const card = CARDS.find((c) => c.key === id);
+      if (card) navigate(card.to);
+    },
+  });
+
   const toggleHand = () => {
-    if (handTrackingOn) {
-      hand.stop();
-      setHandTrackingOn(false);
-    } else {
-      hand.start();
-      setHandTrackingOn(true);
-    }
+    if (handTrackingOn) { hand.stop(); setHandTrackingOn(false); }
+    else { hand.start(); setHandTrackingOn(true); }
   };
+
+  const C = 2 * Math.PI * 20;
 
   return (
     <main className="min-h-screen flex flex-col px-8 md:px-12 py-8 relative">
@@ -102,17 +103,25 @@ const Index = () => {
           onFinalTranscript={handleQuery}
         />
 
-        {/* Action grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full mt-10 items-stretch">
           {CARDS.map(({ key, label, hint, Icon, to, tone }) => {
-            const isHover = hoveredCard === key;
+            const isActive = activeId === key;
             return (
-              <DwellCard
+              <button
                 key={key}
-                hovered={isHover}
-                onSelect={() => navigate(to)}
+                ref={register(key)}
+                onClick={() => navigate(to)}
+                className={[
+                  "relative group rounded-3xl border transition-all duration-300 cursor-pointer",
+                  "p-8 flex flex-col items-start justify-between min-h-[220px] text-left overflow-hidden",
+                  isActive
+                    ? "bg-card border-2 border-primary shadow-glow scale-[1.05] z-10"
+                    : "glass border-border shadow-card hover:scale-[1.02] hover:border-primary/50",
+                ].join(" ")}
               >
                 <div className={`absolute inset-0 bg-gradient-to-br ${tone} pointer-events-none rounded-3xl`} />
+                <Hand className="absolute top-5 right-5 w-6 h-6 text-primary/40" strokeWidth={2} />
+
                 <div className="relative w-14 h-14 rounded-2xl bg-ink flex items-center justify-center">
                   <Icon className="text-ink-foreground w-7 h-7" strokeWidth={2.2} />
                 </div>
@@ -120,13 +129,33 @@ const Index = () => {
                   <h3 className="text-2xl font-serif text-ink leading-tight">{label}</h3>
                   <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground mt-2">{hint}</p>
                 </div>
-              </DwellCard>
+
+                {isActive && (
+                  <>
+                    <div className="absolute bottom-6 right-6 w-12 h-12">
+                      <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+                        <circle cx="24" cy="24" r="20" fill="none" stroke="hsl(var(--primary) / 0.15)" strokeWidth="4" />
+                        <circle
+                          cx="24" cy="24" r="20" fill="none"
+                          stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round"
+                          strokeDasharray={C}
+                          strokeDashoffset={C * (1 - progress)}
+                          style={{ transition: "stroke-dashoffset 80ms linear" }}
+                        />
+                      </svg>
+                    </div>
+                    <span className="absolute -top-3 left-6 px-3 py-1 rounded-full bg-gradient-mint text-primary-foreground text-xs font-bold uppercase tracking-widest shadow-card">
+                      Selecting · {Math.round(progress * 100)}%
+                    </span>
+                  </>
+                )}
+              </button>
             );
           })}
         </div>
 
         <p className="mt-8 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground text-center">
-          ✋ Hold over a card 2s to select · 🎙 Raise hand to start listening
+          ✋ Center hand on a card 2s to select · 🎙 Raise hand to start listening
         </p>
       </section>
 
