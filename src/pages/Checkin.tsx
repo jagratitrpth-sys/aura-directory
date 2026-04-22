@@ -350,6 +350,71 @@ const Checkin = () => {
         )}
 
         <div className="glass rounded-3xl p-8 md:p-12 shadow-card min-h-[420px] flex flex-col">
+          {step === "intro" && lastSnapshot && (
+            <StepShell
+              icon={<Clock className="w-7 h-7" />}
+              eyebrow="Welcome back"
+              title={`Reuse last info, ${lastSnapshot.name.split(" ")[0]}?`}
+              subtitle={`We saved your last check-in ${formatRelative(lastSnapshot.savedAt)}. Pick up where you left off, or start fresh.`}
+            >
+              <div className="grid sm:grid-cols-2 gap-3 w-full">
+                <button
+                  ref={register("intro:reuse")}
+                  onClick={reuseLast}
+                  className={[
+                    "relative overflow-hidden rounded-2xl p-5 text-left transition-all border-2",
+                    activeId === "intro:reuse"
+                      ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.04]"
+                      : "bg-ink text-ink-foreground border-ink shadow-card hover:scale-[1.02]",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest opacity-80">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reuse last info
+                  </div>
+                  <p className="font-serif text-2xl mt-2 leading-tight">{lastSnapshot.reason}</p>
+                  <p className="font-medium opacity-80 mt-1">{lastSnapshot.department}</p>
+                  {activeId === "intro:reuse" && (
+                    <span
+                      className="absolute left-0 bottom-0 h-1 bg-primary-foreground/80"
+                      style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+                    />
+                  )}
+                </button>
+                <button
+                  ref={register("intro:fresh")}
+                  onClick={startFresh}
+                  className={[
+                    "relative overflow-hidden rounded-2xl p-5 text-left transition-all border-2",
+                    activeId === "intro:fresh"
+                      ? "glass border-primary text-ink shadow-glow scale-[1.04]"
+                      : "glass border-border text-ink hover:border-primary/60",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-primary">
+                    <Plus className="w-3.5 h-3.5" />
+                    Start fresh
+                  </div>
+                  <p className="font-serif text-2xl mt-2 leading-tight">New check-in</p>
+                  <p className="text-muted-foreground font-medium mt-1">Enter name, reason, and department from scratch.</p>
+                  {activeId === "intro:fresh" && (
+                    <span
+                      className="absolute left-0 bottom-0 h-1 bg-primary"
+                      style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+                    />
+                  )}
+                </button>
+              </div>
+              <button
+                onClick={() => { clearLastCheckin(); startFresh(); }}
+                className="mt-6 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors self-start"
+              >
+                <X className="w-3.5 h-3.5" />
+                Forget saved info
+              </button>
+            </StepShell>
+          )}
+
           {step === "name" && (
             <StepShell
               icon={<User className="w-7 h-7" />}
