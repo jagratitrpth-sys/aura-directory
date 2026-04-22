@@ -3,13 +3,19 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowRight, ArrowLeft, CheckCircle2, User, MessageSquare, Stethoscope,
   Heart, Brain, Bone, Baby, Eye, Activity, Pill, Sparkles, Mic,
+  RotateCcw, Plus, Clock, X,
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import HandStatusBadge from "@/components/HandStatusBadge";
+import DwellOverlay from "@/components/DwellOverlay";
 import { useHandRaise } from "@/hooks/useHandRaise";
 import { useDwellSelect } from "@/hooks/useDwellSelect";
 import { useVoiceCommands } from "@/hooks/useVoiceCommands";
+import {
+  loadLastCheckin, saveLastCheckin, clearLastCheckin, formatRelative,
+  type CheckinSnapshot,
+} from "@/lib/checkinStore";
 
 type StepKey = "name" | "reason" | "department" | "confirm" | "done";
 
