@@ -9,6 +9,7 @@ import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import HandStatusBadge from "@/components/HandStatusBadge";
 import DwellOverlay from "@/components/DwellOverlay";
+import HighContrastToggle from "@/components/HighContrastToggle";
 import { useHandRaise } from "@/hooks/useHandRaise";
 import { useDwellSelect } from "@/hooks/useDwellSelect";
 import { useVoiceCommands } from "@/hooks/useVoiceCommands";
@@ -287,6 +288,7 @@ const Checkin = () => {
   return (
     <main className="min-h-screen flex flex-col px-8 md:px-12 py-8">
       <KioskHeader showBack listening={voice.listening} />
+      <HighContrastToggle />
 
       <section className="flex-1 max-w-3xl mx-auto w-full mt-10 animate-fade-in">
         {/* Progress */}
@@ -357,61 +359,87 @@ const Checkin = () => {
               title={`Reuse last info, ${lastSnapshot.name.split(" ")[0]}?`}
               subtitle={`We saved your last check-in ${formatRelative(lastSnapshot.savedAt)}. Pick up where you left off, or start fresh.`}
             >
-              <div className="grid sm:grid-cols-2 gap-3 w-full">
+              <div
+                role="radiogroup"
+                aria-label="Resume previous check-in or start fresh"
+                className="grid sm:grid-cols-2 gap-3 w-full"
+              >
                 <button
                   ref={register("intro:reuse")}
                   onClick={reuseLast}
+                  role="radio"
+                  aria-checked={false}
+                  aria-label={`Reuse last info: ${lastSnapshot.reason} in ${lastSnapshot.department}`}
+                  aria-describedby="intro-reuse-desc"
                   className={[
                     "relative overflow-hidden rounded-2xl p-5 text-left transition-all border-2",
+                    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/60",
                     activeId === "intro:reuse"
                       ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.04]"
                       : "bg-ink text-ink-foreground border-ink shadow-card hover:scale-[1.02]",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest opacity-80">
-                    <RotateCcw className="w-3.5 h-3.5" />
+                    <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
                     Reuse last info
                   </div>
                   <p className="font-serif text-2xl mt-2 leading-tight">{lastSnapshot.reason}</p>
-                  <p className="font-medium opacity-80 mt-1">{lastSnapshot.department}</p>
+                  <p id="intro-reuse-desc" className="font-medium opacity-80 mt-1">{lastSnapshot.department}</p>
                   {activeId === "intro:reuse" && (
                     <span
                       className="absolute left-0 bottom-0 h-1 bg-primary-foreground/80"
                       style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+                      aria-hidden="true"
                     />
                   )}
                 </button>
                 <button
                   ref={register("intro:fresh")}
                   onClick={startFresh}
+                  role="radio"
+                  aria-checked={false}
+                  aria-label="Start a fresh check-in"
+                  aria-describedby="intro-fresh-desc"
                   className={[
                     "relative overflow-hidden rounded-2xl p-5 text-left transition-all border-2",
+                    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/60",
                     activeId === "intro:fresh"
                       ? "glass border-primary text-ink shadow-glow scale-[1.04]"
                       : "glass border-border text-ink hover:border-primary/60",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-primary">
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                     Start fresh
                   </div>
                   <p className="font-serif text-2xl mt-2 leading-tight">New check-in</p>
-                  <p className="text-muted-foreground font-medium mt-1">Enter name, reason, and department from scratch.</p>
+                  <p id="intro-fresh-desc" className="text-muted-foreground font-medium mt-1">Enter name, reason, and department from scratch.</p>
                   {activeId === "intro:fresh" && (
                     <span
                       className="absolute left-0 bottom-0 h-1 bg-primary"
                       style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+                      aria-hidden="true"
                     />
                   )}
                 </button>
               </div>
               <button
                 onClick={() => { clearLastCheckin(); startFresh(); }}
-                className="mt-6 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors self-start"
+                className="mt-6 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors self-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive rounded"
+                aria-label="Forget saved check-in info"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
                 Forget saved info
               </button>
+
+              {/* Screen-reader live region: announces hover/dwell state on intro options */}
+              <p className="sr-only" aria-live="polite" aria-atomic="true">
+                {activeId === "intro:reuse"
+                  ? `Selecting reuse last info, ${Math.round(progress * 100)} percent`
+                  : activeId === "intro:fresh"
+                  ? `Selecting start fresh, ${Math.round(progress * 100)} percent`
+                  : "Use Tab to focus an option, or hold your hand over a card for two seconds to select."}
+              </p>
             </StepShell>
           )}
 
