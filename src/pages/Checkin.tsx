@@ -3,15 +3,21 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowRight, ArrowLeft, CheckCircle2, User, MessageSquare, Stethoscope,
   Heart, Brain, Bone, Baby, Eye, Activity, Pill, Sparkles, Mic,
+  RotateCcw, Plus, Clock, X,
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import HandStatusBadge from "@/components/HandStatusBadge";
+import DwellOverlay from "@/components/DwellOverlay";
 import { useHandRaise } from "@/hooks/useHandRaise";
 import { useDwellSelect } from "@/hooks/useDwellSelect";
 import { useVoiceCommands } from "@/hooks/useVoiceCommands";
+import {
+  loadLastCheckin, saveLastCheckin, clearLastCheckin, formatRelative,
+  type CheckinSnapshot,
+} from "@/lib/checkinStore";
 
-type StepKey = "name" | "reason" | "department" | "confirm" | "done";
+type StepKey = "intro" | "name" | "reason" | "department" | "confirm" | "done";
 
 const STEPS: { key: StepKey; label: string }[] = [
   { key: "name", label: "Your name" },
@@ -143,7 +149,8 @@ const ReviewRow = ({ label, value }: { label: string; value: string }) => (
 
 const Checkin = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<StepKey>("name");
+  const [lastSnapshot] = useState<CheckinSnapshot | null>(() => loadLastCheckin());
+  const [step, setStep] = useState<StepKey>(() => (loadLastCheckin() ? "intro" : "name"));
   const [name, setName] = useState("");
   const [reason, setReason] = useState("");
   const [department, setDepartment] = useState("");
@@ -164,13 +171,30 @@ const Checkin = () => {
   const stateRef = useRef({ step, canNext });
   useEffect(() => { stateRef.current = { step, canNext }; }, [step, canNext]);
 
+  const reuseLast = () => {
+    if (!lastSnapshot) return;
+    setName(lastSnapshot.name);
+    setReason(lastSnapshot.reason);
+    setDepartment(lastSnapshot.department);
+    setStep("confirm");
+  };
+
+  const startFresh = () => {
+    setName("");
+    setReason("");
+    setDepartment("");
+    setStep("name");
+  };
+
   const next = () => {
     const s = stateRef.current.step;
+    if (s === "intro") { startFresh(); return; }
     if (!stateRef.current.canNext && s !== "confirm") return;
     if (s === "name") setStep("reason");
     else if (s === "reason") setStep("department");
     else if (s === "department") setStep("confirm");
     else if (s === "confirm") {
+      saveLastCheckin({ name, reason, department });
       const t = `Q-${Math.floor(100 + Math.random() * 900)}`;
       setToken(t);
       setStep("done");
@@ -195,6 +219,16 @@ const Checkin = () => {
       "go back": prev,
       "previous": prev,
     };
+    if (step === "intro") {
+      base["reuse"] = reuseLast;
+      base["reuse last"] = reuseLast;
+      base["use last"] = reuseLast;
+      base["yes"] = reuseLast;
+      base["start fresh"] = startFresh;
+      base["start over"] = startFresh;
+      base["new"] = startFresh;
+      base["no"] = startFresh;
+    }
     if (step === "confirm") {
       base["confirm"] = next;
       base["check in"] = next;
@@ -233,11 +267,13 @@ const Checkin = () => {
     };
   }, [handTrackingOn, hand.active, hand.position]);
 
-  const { register, activeId, progress } = useDwellSelect({
+  const { register, activeId, progress, nodes, centerToleranceRatio } = useDwellSelect({
     cursor,
     onSelect: (id) => {
       if (id.startsWith("reason:")) setReason(id.slice("reason:".length));
       else if (id.startsWith("dept:")) setDepartment(id.slice("dept:".length));
+      else if (id === "intro:reuse") reuseLast();
+      else if (id === "intro:fresh") startFresh();
       else if (id === "nav:next") next();
       else if (id === "nav:back") prev();
     },
@@ -254,7 +290,7 @@ const Checkin = () => {
 
       <section className="flex-1 max-w-3xl mx-auto w-full mt-10 animate-fade-in">
         {/* Progress */}
-        {step !== "done" && (
+        {step !== "done" && step !== "intro" && (
           <div className="flex items-center justify-center gap-3 mb-10">
             {STEPS.map((s, i) => {
               const done = i < stepIndex;
@@ -293,7 +329,7 @@ const Checkin = () => {
         )}
 
         {/* Voice hint */}
-        {step !== "name" && step !== "done" && voice.supported && (
+        {step !== "name" && step !== "done" && step !== "intro" && voice.supported && (
           <div className="flex items-center justify-center gap-2 mb-5 -mt-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass">
               <span className="relative w-2 h-2">
@@ -314,6 +350,71 @@ const Checkin = () => {
         )}
 
         <div className="glass rounded-3xl p-8 md:p-12 shadow-card min-h-[420px] flex flex-col">
+          {step === "intro" && lastSnapshot && (
+            <StepShell
+              icon={<Clock className="w-7 h-7" />}
+              eyebrow="Welcome back"
+              title={`Reuse last info, ${lastSnapshot.name.split(" ")[0]}?`}
+              subtitle={`We saved your last check-in ${formatRelative(lastSnapshot.savedAt)}. Pick up where you left off, or start fresh.`}
+            >
+              <div className="grid sm:grid-cols-2 gap-3 w-full">
+                <button
+                  ref={register("intro:reuse")}
+                  onClick={reuseLast}
+                  className={[
+                    "relative overflow-hidden rounded-2xl p-5 text-left transition-all border-2",
+                    activeId === "intro:reuse"
+                      ? "bg-gradient-mint text-primary-foreground border-primary shadow-glow scale-[1.04]"
+                      : "bg-ink text-ink-foreground border-ink shadow-card hover:scale-[1.02]",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest opacity-80">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reuse last info
+                  </div>
+                  <p className="font-serif text-2xl mt-2 leading-tight">{lastSnapshot.reason}</p>
+                  <p className="font-medium opacity-80 mt-1">{lastSnapshot.department}</p>
+                  {activeId === "intro:reuse" && (
+                    <span
+                      className="absolute left-0 bottom-0 h-1 bg-primary-foreground/80"
+                      style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+                    />
+                  )}
+                </button>
+                <button
+                  ref={register("intro:fresh")}
+                  onClick={startFresh}
+                  className={[
+                    "relative overflow-hidden rounded-2xl p-5 text-left transition-all border-2",
+                    activeId === "intro:fresh"
+                      ? "glass border-primary text-ink shadow-glow scale-[1.04]"
+                      : "glass border-border text-ink hover:border-primary/60",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-primary">
+                    <Plus className="w-3.5 h-3.5" />
+                    Start fresh
+                  </div>
+                  <p className="font-serif text-2xl mt-2 leading-tight">New check-in</p>
+                  <p className="text-muted-foreground font-medium mt-1">Enter name, reason, and department from scratch.</p>
+                  {activeId === "intro:fresh" && (
+                    <span
+                      className="absolute left-0 bottom-0 h-1 bg-primary"
+                      style={{ width: `${progress * 100}%`, transition: "width 75ms linear" }}
+                    />
+                  )}
+                </button>
+              </div>
+              <button
+                onClick={() => { clearLastCheckin(); startFresh(); }}
+                className="mt-6 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors self-start"
+              >
+                <X className="w-3.5 h-3.5" />
+                Forget saved info
+              </button>
+            </StepShell>
+          )}
+
           {step === "name" && (
             <StepShell
               icon={<User className="w-7 h-7" />}
@@ -433,7 +534,7 @@ const Checkin = () => {
           )}
 
           {/* Nav buttons */}
-          {step !== "done" && (
+          {step !== "done" && step !== "intro" && (
             <div className="mt-auto pt-8 flex items-center justify-between">
               <NavButton
                 ref={register("nav:back")}
@@ -462,6 +563,17 @@ const Checkin = () => {
         </div>
       </section>
 
+      {/* Visual hand cursor + per-option center-zone overlay */}
+      {handTrackingOn && (
+        <DwellOverlay
+          cursor={cursor}
+          nodes={nodes}
+          activeId={activeId}
+          progress={progress}
+          centerToleranceRatio={centerToleranceRatio}
+        />
+      )}
+
       <HandStatusBadge
         enabled={handTrackingOn}
         onToggle={toggleHand}
@@ -469,6 +581,7 @@ const Checkin = () => {
         confidence={hand.confidence}
         position={hand.position}
         error={hand.error}
+        hideCursor
       />
     </main>
   );
