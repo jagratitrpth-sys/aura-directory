@@ -17,7 +17,7 @@ import {
   type CheckinSnapshot,
 } from "@/lib/checkinStore";
 
-type StepKey = "name" | "reason" | "department" | "confirm" | "done";
+type StepKey = "intro" | "name" | "reason" | "department" | "confirm" | "done";
 
 const STEPS: { key: StepKey; label: string }[] = [
   { key: "name", label: "Your name" },
