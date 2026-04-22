@@ -1,20 +1,10 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Search,
-  Heart,
-  Brain,
-  Bone,
-  Baby,
-  Eye,
-  Stethoscope,
-  Activity,
-  Pill,
-  Hand,
-  MapPin,
-  CheckCircle2,
+  Heart, Brain, Bone, Baby, Eye, Stethoscope, Activity, Pill, Hand, MapPin, CheckCircle2,
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
+import VoiceSearchBar from "@/components/VoiceSearchBar";
 
 type Department = {
   name: string;
@@ -38,11 +28,17 @@ const DEPARTMENTS: Department[] = [
 const CATEGORIES = ["All", "General", "Specialty", "Emergency"] as const;
 
 const Departments = () => {
-  const [query, setQuery] = useState("");
+  const [params] = useSearchParams();
+  const [query, setQuery] = useState(params.get("q") || "");
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
   const [selected, setSelected] = useState<Department | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const q = params.get("q");
+    if (q) setQuery(q);
+  }, [params]);
 
   const filtered = useMemo(() => {
     return DEPARTMENTS.filter((d) => {
@@ -62,36 +58,27 @@ const Departments = () => {
   };
 
   return (
-    <main className="min-h-screen flex flex-col px-10 py-8 animate-fade-in">
+    <main className="min-h-screen flex flex-col px-8 md:px-12 py-8">
       <KioskHeader showBack />
 
-      <section className="flex-1 max-w-6xl mx-auto w-full mt-10">
+      <section className="flex-1 max-w-6xl mx-auto w-full mt-10 animate-fade-in">
         <div className="text-center mb-8">
-          <p className="text-sm font-semibold text-primary uppercase tracking-[0.3em] mb-2">
+          <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-primary">
             Find a Department
-          </p>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight">
+          </span>
+          <h1 className="text-4xl md:text-6xl font-serif text-ink tracking-tight mt-2">
             Where would you like to go?
           </h1>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-3xl mx-auto">
-          <div className="absolute inset-0 bg-gradient-teal opacity-15 blur-2xl rounded-full" />
-          <div className="relative flex items-center gap-4 bg-card border border-border rounded-2xl px-6 py-4 shadow-card">
-            <Search className="w-6 h-6 text-primary shrink-0" strokeWidth={2.5} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Say or type a department name..."
-              className="flex-1 bg-transparent outline-none text-lg text-foreground placeholder:text-muted-foreground font-medium"
-            />
-            <Hand className="w-5 h-5 text-primary/40" />
-          </div>
-        </div>
+        <VoiceSearchBar
+          value={query}
+          onChange={setQuery}
+          placeholder="Say or type a department name…"
+        />
 
         {/* Categories */}
-        <div className="flex flex-wrap justify-center gap-3 mt-6">
+        <div className="flex flex-wrap justify-center gap-2 mt-8">
           {CATEGORIES.map((c) => {
             const active = c === category;
             return (
@@ -99,10 +86,10 @@ const Departments = () => {
                 key={c}
                 onClick={() => setCategory(c)}
                 className={[
-                  "px-6 py-2.5 rounded-full font-semibold text-sm uppercase tracking-wider transition-all border-2",
+                  "px-5 py-2 rounded-full font-mono text-[11px] uppercase tracking-widest transition-all border",
                   active
-                    ? "bg-gradient-teal text-primary-foreground border-primary shadow-card scale-105"
-                    : "bg-card text-foreground border-border hover:border-primary/40",
+                    ? "bg-ink text-ink-foreground border-ink shadow-card scale-105"
+                    : "glass text-ink border-border hover:border-ink/40",
                 ].join(" ")}
               >
                 {c}
@@ -112,21 +99,21 @@ const Departments = () => {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
           {filtered.map((d) => {
             const Icon = d.Icon;
             return (
               <button
                 key={d.name}
                 onClick={() => setSelected(d)}
-                className="group relative rounded-2xl bg-card border border-border p-6 text-left shadow-card hover:scale-[1.04] hover:border-primary transition-all duration-300"
+                className="group relative rounded-2xl glass p-6 text-left shadow-card hover:scale-[1.04] hover:border-primary/60 transition-all duration-300 border border-border"
               >
                 <Hand className="absolute top-4 right-4 w-5 h-5 text-primary/30" />
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-gradient-teal transition-colors">
-                  <Icon className="w-6 h-6 text-primary group-hover:text-primary-foreground" strokeWidth={2.4} />
+                <div className="w-12 h-12 rounded-xl bg-ink flex items-center justify-center mb-5 group-hover:bg-gradient-mint transition-colors">
+                  <Icon className="w-6 h-6 text-ink-foreground" strokeWidth={2.4} />
                 </div>
-                <h3 className="text-lg font-bold text-foreground tracking-tight">{d.name}</h3>
-                <p className="text-xs font-medium text-muted-foreground mt-1">
+                <h3 className="text-xl font-serif text-ink leading-tight">{d.name}</h3>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mt-1.5">
                   {d.floor} · {d.wing}
                 </p>
               </button>
@@ -142,29 +129,29 @@ const Departments = () => {
 
       {/* Tap to confirm modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm animate-fade-in p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm animate-fade-in p-6">
           <div className="bg-card rounded-3xl shadow-glow border-2 border-primary max-w-md w-full p-8 text-center">
             {confirmed ? (
               <>
-                <div className="w-20 h-20 rounded-full bg-gradient-teal mx-auto flex items-center justify-center mb-5">
+                <div className="w-20 h-20 rounded-full bg-gradient-mint mx-auto flex items-center justify-center mb-5">
                   <CheckCircle2 className="w-10 h-10 text-primary-foreground" strokeWidth={2.5} />
                 </div>
-                <h2 className="text-2xl font-bold text-foreground">Directions sent!</h2>
+                <h2 className="text-3xl font-serif text-ink">Directions sent!</h2>
                 <p className="text-muted-foreground font-medium mt-2">
-                  Follow the teal floor signs to {selected.name}.
+                  Follow the floor signs to {selected.name}.
                 </p>
               </>
             ) : (
               <>
-                <div className="w-20 h-20 rounded-2xl bg-gradient-teal mx-auto flex items-center justify-center mb-5">
-                  <selected.Icon className="w-10 h-10 text-primary-foreground" strokeWidth={2.4} />
+                <div className="w-20 h-20 rounded-2xl bg-gradient-ink mx-auto flex items-center justify-center mb-5">
+                  <selected.Icon className="w-10 h-10 text-ink-foreground" strokeWidth={2.4} />
                 </div>
-                <h2 className="text-3xl font-extrabold text-foreground tracking-tight">{selected.name}</h2>
+                <h2 className="text-4xl font-serif text-ink tracking-tight">{selected.name}</h2>
                 <div className="flex items-center justify-center gap-2 mt-3 text-muted-foreground font-medium">
                   <MapPin className="w-4 h-4 text-primary" />
                   <span>{selected.floor} · {selected.wing}</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-6 mb-5 uppercase tracking-widest font-semibold">
+                <p className="text-xs font-mono text-muted-foreground mt-6 mb-5 uppercase tracking-widest">
                   ✋ Tap or hold hand to confirm
                 </p>
                 <div className="flex gap-3">
@@ -176,7 +163,7 @@ const Departments = () => {
                   </button>
                   <button
                     onClick={handleConfirm}
-                    className="flex-1 py-4 rounded-2xl bg-gradient-teal text-primary-foreground font-bold shadow-card hover:opacity-95 transition-opacity"
+                    className="flex-1 py-4 rounded-2xl bg-gradient-mint text-primary-foreground font-bold shadow-card hover:opacity-95 transition-opacity"
                   >
                     Confirm
                   </button>

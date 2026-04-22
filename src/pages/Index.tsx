@@ -1,126 +1,143 @@
-import { Search, Stethoscope, Pill, ClipboardCheck, Hand } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Stethoscope, Pill, ClipboardCheck, Sparkles } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
+import VoiceSearchBar from "@/components/VoiceSearchBar";
+import DwellCard from "@/components/DwellCard";
+import HandStatusBadge from "@/components/HandStatusBadge";
+import { useHandRaise } from "@/hooks/useHandRaise";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+
+type CardKey = "departments" | "medicine" | "checkin";
+
+const CARDS: Array<{
+  key: CardKey;
+  label: string;
+  hint: string;
+  Icon: typeof Stethoscope;
+  to: string;
+  tone: string;
+}> = [
+  { key: "departments", label: "Find a Department", hint: "Cardiology · Neurology · Pediatrics", Icon: Stethoscope, to: "/departments", tone: "from-primary/10 to-primary/0" },
+  { key: "medicine", label: "Medicine Availability", hint: "Stock · Pickup counter · Price", Icon: Pill, to: "/medicine", tone: "from-aurora/10 to-aurora/0" },
+  { key: "checkin", label: "Check-in", hint: "Name · Reason · Department", Icon: ClipboardCheck, to: "/checkin", tone: "from-accent/15 to-accent/0" },
+];
 
 const Index = () => {
-  const cards = [
-    {
-      label: "Find a Department",
-      Icon: Stethoscope,
-      active: false,
-      to: "/departments",
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [handTrackingOn, setHandTrackingOn] = useState(false);
+  const hand = useHandRaise();
+  const lastActiveRef = useRef(false);
+
+  const voice = useVoiceInput({
+    onFinalResult: (text) => {
+      handleQuery(text);
     },
-    {
-      label: "Medicine Availability",
-      Icon: Pill,
-      active: true,
-      to: "/medicine",
-    },
-    {
-      label: "Check-in",
-      Icon: ClipboardCheck,
-      active: false,
-      to: "/",
-    },
-  ];
+  });
+
+  const handleQuery = (text: string) => {
+    const t = text.toLowerCase();
+    if (/(department|cardio|neuro|ortho|pediatric|emergency|eye|ophthal|find)/.test(t)) {
+      navigate(`/departments?q=${encodeURIComponent(text)}`);
+    } else if (/(check[-\s]?in|register|appointment|visit)/.test(t)) {
+      navigate("/checkin");
+    } else {
+      // Default: treat as medicine search
+      navigate(`/medicine?q=${encodeURIComponent(text)}`);
+    }
+  };
+
+  // Hand-raise trigger for voice
+  useEffect(() => {
+    if (!handTrackingOn) return;
+    if (hand.active && !lastActiveRef.current && !voice.listening) {
+      voice.start();
+    }
+    lastActiveRef.current = hand.active;
+  }, [hand.active, handTrackingOn, voice]);
+
+  // Determine which card the hand is currently over (3 vertical columns)
+  const hoveredCard: CardKey | null = useMemo(() => {
+    if (!handTrackingOn || !hand.active || !hand.position) return null;
+    const x = hand.position.x;
+    if (x < 0.34) return "departments";
+    if (x < 0.67) return "medicine";
+    return "checkin";
+  }, [handTrackingOn, hand.active, hand.position]);
+
+  const toggleHand = () => {
+    if (handTrackingOn) {
+      hand.stop();
+      setHandTrackingOn(false);
+    } else {
+      hand.start();
+      setHandTrackingOn(true);
+    }
+  };
 
   return (
-    <main className="min-h-screen flex flex-col px-10 py-8 animate-fade-in">
-      <KioskHeader />
+    <main className="min-h-screen flex flex-col px-8 md:px-12 py-8 relative">
+      <KioskHeader listening={voice.listening} />
 
-      <section className="flex-1 flex flex-col items-center justify-center max-w-6xl mx-auto w-full -mt-6">
-        <div className="text-center mb-10">
-          <p className="text-sm font-semibold text-primary uppercase tracking-[0.3em] mb-3">
-            Touchless Assistant
-          </p>
-          <h1 className="text-5xl md:text-6xl font-extrabold text-foreground tracking-tight leading-tight">
-            How can we help you today?
+      <section className="flex-1 flex flex-col items-center justify-center max-w-6xl mx-auto w-full">
+        <div className="text-center mb-8 animate-fade-in">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass mb-5">
+            <Sparkles className="w-3.5 h-3.5 text-accent" />
+            <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink">
+              Touchless Assistant
+            </span>
+          </span>
+          <h1 className="text-5xl md:text-7xl font-serif text-ink leading-[0.95] tracking-tight">
+            How can we
+            <br />
+            <span className="italic text-primary">help you</span> today?
           </h1>
         </div>
 
-        {/* Search bar */}
-        <div className="w-full max-w-3xl relative group">
-          <div className="absolute inset-0 bg-gradient-teal opacity-20 blur-2xl rounded-full" />
-          <div className="relative flex items-center gap-4 bg-card border border-border rounded-2xl px-6 py-5 shadow-card">
-            <Search className="w-7 h-7 text-primary shrink-0" strokeWidth={2.5} />
-            <input
-              readOnly
-              placeholder="Say 'Search Paracetamol' or raise your hand to begin."
-              className="flex-1 bg-transparent outline-none text-lg md:text-xl text-foreground placeholder:text-muted-foreground font-medium"
-            />
-            <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-primary/10">
-              <span className="w-2 h-2 rounded-full bg-primary animate-mic-pulse" />
-              <span className="text-xs font-bold text-primary uppercase tracking-wider">Live</span>
-            </div>
-          </div>
-        </div>
+        <VoiceSearchBar
+          value={query}
+          onChange={setQuery}
+          placeholder="Say 'Search Paracetamol' or raise your hand to begin."
+          onFinalTranscript={handleQuery}
+        />
 
         {/* Action grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-12 items-stretch">
-          {cards.map(({ label, Icon, active, to }) => (
-            <Link
-              key={label}
-              to={to}
-              className={[
-                "relative group rounded-3xl bg-card border transition-all duration-300 cursor-pointer",
-                "p-8 flex flex-col items-start justify-between min-h-[220px]",
-                active
-                  ? "border-primary border-2 shadow-glow scale-[1.06] z-10 animate-glow-pulse"
-                  : "border-border shadow-card hover:scale-[1.02] hover:border-primary/50",
-              ].join(" ")}
-            >
-              <Hand className="absolute top-5 right-5 w-6 h-6 text-primary/40" strokeWidth={2} />
-
-              <div
-                className={[
-                  "w-14 h-14 rounded-2xl flex items-center justify-center",
-                  active ? "bg-gradient-teal" : "bg-primary/10",
-                ].join(" ")}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full mt-10 items-stretch">
+          {CARDS.map(({ key, label, hint, Icon, to, tone }) => {
+            const isHover = hoveredCard === key;
+            return (
+              <DwellCard
+                key={key}
+                hovered={isHover}
+                onSelect={() => navigate(to)}
               >
-                <Icon
-                  className={active ? "text-primary-foreground w-7 h-7" : "text-primary w-7 h-7"}
-                  strokeWidth={2.4}
-                />
-              </div>
-
-              <div className="flex items-end justify-between w-full mt-6">
-                <h3 className="text-2xl font-bold text-foreground tracking-tight leading-tight max-w-[70%]">
-                  {label}
-                </h3>
-
-                {active && (
-                  <div className="relative w-12 h-12 shrink-0">
-                    <svg className="w-12 h-12 -rotate-90 animate-spin-slow" viewBox="0 0 48 48">
-                      <circle cx="24" cy="24" r="20" fill="none" stroke="hsl(var(--primary) / 0.15)" strokeWidth="4" />
-                      <circle
-                        cx="24"
-                        cy="24"
-                        r="20"
-                        fill="none"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeDasharray="125.6"
-                        strokeDashoffset="75"
-                      />
-                    </svg>
-                  </div>
-                )}
-              </div>
-
-              {active && (
-                <span className="absolute -top-3 left-6 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold uppercase tracking-widest shadow-card">
-                  Selecting…
-                </span>
-              )}
-            </Link>
-          ))}
+                <div className={`absolute inset-0 bg-gradient-to-br ${tone} pointer-events-none rounded-3xl`} />
+                <div className="relative w-14 h-14 rounded-2xl bg-ink flex items-center justify-center">
+                  <Icon className="text-ink-foreground w-7 h-7" strokeWidth={2.2} />
+                </div>
+                <div className="relative mt-6">
+                  <h3 className="text-2xl font-serif text-ink leading-tight">{label}</h3>
+                  <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground mt-2">{hint}</p>
+                </div>
+              </DwellCard>
+            );
+          })}
         </div>
 
-        <p className="mt-10 text-sm text-muted-foreground font-medium">
-          ✋ Hold your hand over a card for 2 seconds to select · 🎙 Or speak your request aloud
+        <p className="mt-8 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground text-center">
+          ✋ Hold over a card 2s to select · 🎙 Raise hand to start listening
         </p>
       </section>
+
+      <HandStatusBadge
+        enabled={handTrackingOn}
+        onToggle={toggleHand}
+        active={hand.active}
+        confidence={hand.confidence}
+        position={hand.position}
+        error={hand.error}
+      />
     </main>
   );
 };
