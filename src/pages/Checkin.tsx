@@ -219,6 +219,16 @@ const Checkin = () => {
       "go back": prev,
       "previous": prev,
     };
+    if (step === "intro") {
+      base["reuse"] = reuseLast;
+      base["reuse last"] = reuseLast;
+      base["use last"] = reuseLast;
+      base["yes"] = reuseLast;
+      base["start fresh"] = startFresh;
+      base["start over"] = startFresh;
+      base["new"] = startFresh;
+      base["no"] = startFresh;
+    }
     if (step === "confirm") {
       base["confirm"] = next;
       base["check in"] = next;
@@ -257,11 +267,13 @@ const Checkin = () => {
     };
   }, [handTrackingOn, hand.active, hand.position]);
 
-  const { register, activeId, progress } = useDwellSelect({
+  const { register, activeId, progress, nodes, centerToleranceRatio } = useDwellSelect({
     cursor,
     onSelect: (id) => {
       if (id.startsWith("reason:")) setReason(id.slice("reason:".length));
       else if (id.startsWith("dept:")) setDepartment(id.slice("dept:".length));
+      else if (id === "intro:reuse") reuseLast();
+      else if (id === "intro:fresh") startFresh();
       else if (id === "nav:next") next();
       else if (id === "nav:back") prev();
     },
