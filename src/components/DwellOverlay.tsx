@@ -58,9 +58,19 @@ const DwellOverlay = ({
 
   if (zones.length === 0 && !cursor) return null;
 
+  // Detect high-contrast mode for amplified stroke weights
+  const hc = typeof document !== "undefined" && document.documentElement.classList.contains("hc");
+  const inactiveStroke = hc ? 2.5 : 1.25;
+  const activeStroke = hc ? 4 : 2;
+  const arcStroke = hc ? 5 : 3;
+
   return (
-    <div className="pointer-events-none fixed inset-0 z-30">
-      <svg className="absolute inset-0 w-full h-full" aria-hidden>
+    <div
+      className="pointer-events-none fixed inset-0 z-30"
+      role="presentation"
+      aria-hidden="true"
+    >
+      <svg className="absolute inset-0 w-full h-full" aria-hidden="true" focusable="false">
         {zones.map((z) => {
           const active = activeId === z.id;
           return (
@@ -72,20 +82,20 @@ const DwellOverlay = ({
                 ry={z.ry}
                 fill={active ? "hsl(var(--primary) / 0.10)" : "transparent"}
                 stroke={active ? "hsl(var(--primary))" : "hsl(var(--ink) / 0.25)"}
-                strokeWidth={active ? 2 : 1.25}
-                strokeDasharray={active ? "0" : "4 6"}
+                strokeWidth={active ? activeStroke : inactiveStroke}
+                strokeDasharray={active ? "0" : hc ? "6 4" : "4 6"}
                 style={{ transition: "stroke 120ms ease, stroke-width 120ms ease, fill 120ms ease" }}
               />
               {/* Center crosshair dot */}
               <circle
                 cx={z.cx}
                 cy={z.cy}
-                r={active ? 3 : 2}
+                r={active ? (hc ? 4 : 3) : hc ? 3 : 2}
                 fill={active ? "hsl(var(--primary))" : "hsl(var(--ink) / 0.35)"}
               />
               {active && (
                 /* Progress arc around the zone */
-                <ProgressArc cx={z.cx} cy={z.cy} rx={z.rx + 8} ry={z.ry + 8} progress={progress} />
+                <ProgressArc cx={z.cx} cy={z.cy} rx={z.rx + 8} ry={z.ry + 8} progress={progress} strokeWidth={arcStroke} />
               )}
             </g>
           );
@@ -101,6 +111,7 @@ const DwellOverlay = ({
             top: cursor.y,
             transform: "translate(-50%, -50%)",
           }}
+          aria-hidden="true"
         >
           <div className="relative w-12 h-12">
             {!activeId && (
@@ -110,6 +121,7 @@ const DwellOverlay = ({
               className={[
                 "relative w-12 h-12 rounded-full flex items-center justify-center shadow-glow transition-colors",
                 activeId ? "bg-gradient-mint" : "bg-ink",
+                hc ? "ring-2 ring-foreground" : "",
               ].join(" ")}
             >
               <Hand
@@ -126,8 +138,8 @@ const DwellOverlay = ({
 
 /** Stroked elliptical arc that fills clockwise based on `progress` (0..1). */
 const ProgressArc = ({
-  cx, cy, rx, ry, progress,
-}: { cx: number; cy: number; rx: number; ry: number; progress: number }) => {
+  cx, cy, rx, ry, progress, strokeWidth = 3,
+}: { cx: number; cy: number; rx: number; ry: number; progress: number; strokeWidth?: number }) => {
   // Approximate ellipse perimeter (Ramanujan)
   const h = Math.pow(rx - ry, 2) / Math.pow(rx + ry, 2);
   const perimeter = Math.PI * (rx + ry) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
@@ -141,7 +153,7 @@ const ProgressArc = ({
       ry={ry}
       fill="none"
       stroke="hsl(var(--primary))"
-      strokeWidth={3}
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeDasharray={`${dash} ${gap}`}
       transform={`rotate(-90 ${cx} ${cy})`}
