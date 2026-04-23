@@ -67,12 +67,16 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
     };
     rec.onerror = (e: unknown) => {
       const err = (e as { error?: string })?.error;
+      console.warn("[voice] recognition error:", err, e);
       if (err && err !== "no-speech" && err !== "aborted") {
         setError(err);
       }
       setListening(false);
     };
-    rec.onend = () => setListening(false);
+    rec.onend = () => {
+      console.info("[voice] recognition ended");
+      setListening(false);
+    };
 
     recognitionRef.current = rec;
     return () => {
@@ -81,15 +85,40 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
     };
   }, [lang]);
 
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     const rec = recognitionRef.current;
     if (!rec || listening) return;
+
+    // Prime the mic — forces the browser to show a permission prompt
+    // (or surface a real error) instead of failing silently. Critical in
+    // sandboxed iframes like the Lovable preview, where Web Speech API
+    // otherwise reports nothing when the mic is blocked.
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (err) {
+      const name = (err as { name?: string })?.name || "MicError";
+      console.error("[voice] mic permission failed:", name, err);
+      setError(
+        name === "NotAllowedError"
+          ? "not-allowed"
+          : name === "NotFoundError"
+          ? "no-microphone"
+          : name,
+      );
+      return;
+    }
+
     try {
       setTranscript("");
       setError(null);
       rec.start();
       setListening(true);
-    } catch { /* already started */ }
+      console.info("[voice] recognition started");
+    } catch (err) {
+      console.error("[voice] start() threw:", err);
+      setError("start-failed");
+    }
   }, [listening]);
 
   const stop = useCallback(() => {
