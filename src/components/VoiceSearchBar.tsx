@@ -20,13 +20,14 @@ const VoiceSearchBar = ({
 }: VoiceSearchBarProps) => {
   const lastFinalRef = useRef<string>("");
 
-  const { supported, listening, transcript, start, stop, error } = useVoiceInput({
-    onFinalResult: (text) => {
-      lastFinalRef.current = text;
-      onChange(text);
-      onFinalTranscript?.(text);
-    },
-  });
+  const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
+    useVoiceInput({
+      onFinalResult: (text) => {
+        lastFinalRef.current = text;
+        onChange(text);
+        onFinalTranscript?.(text);
+      },
+    });
 
   // Stream interim transcripts into the input as the user speaks
   useEffect(() => {
@@ -45,8 +46,12 @@ const VoiceSearchBar = ({
     ? "Mic blocked — click 🔒 in address bar → allow microphone, then retry"
     : error === "no-microphone"
     ? "No microphone detected on this device"
+    : error === "no-speech"
+    ? "Didn't catch that — tap mic to try again"
     : error
     ? `Voice error: ${error} — tap mic to retry`
+    : retryCountdown > 0
+    ? `Didn't hear you — retrying in ${retryCountdown}s…`
     : listening
     ? transcript
       ? `● Heard: "${transcript}"`
@@ -74,6 +79,8 @@ const VoiceSearchBar = ({
             "relative w-12 h-12 rounded-full flex items-center justify-center transition-all shrink-0",
             listening
               ? "bg-gradient-mint text-primary-foreground shadow-glow"
+              : retryCountdown > 0
+              ? "bg-accent text-accent-foreground"
               : "bg-ink text-ink-foreground hover:scale-105",
             !supported && "opacity-50 cursor-not-allowed",
           ].join(" ")}
@@ -84,14 +91,26 @@ const VoiceSearchBar = ({
               <span className="absolute inset-0 rounded-full bg-primary/30 animate-ring-pulse [animation-delay:0.6s]" />
             </>
           )}
-          {listening ? <Mic className="w-5 h-5 relative" /> : <MicOff className="w-5 h-5 relative" />}
+          {retryCountdown > 0 ? (
+            <span className="relative font-mono text-sm font-bold tabular-nums">
+              {retryCountdown}
+            </span>
+          ) : listening ? (
+            <Mic className="w-5 h-5 relative" />
+          ) : (
+            <MicOff className="w-5 h-5 relative" />
+          )}
         </button>
       </div>
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
         <span
           className={[
             "text-xs font-mono uppercase tracking-widest truncate",
-            error ? "text-destructive" : "text-muted-foreground",
+            error
+              ? "text-destructive"
+              : retryCountdown > 0
+              ? "text-accent-foreground"
+              : "text-muted-foreground",
           ].join(" ")}
           aria-live="polite"
         >
@@ -99,6 +118,17 @@ const VoiceSearchBar = ({
         </span>
         <span className="text-xs font-mono text-muted-foreground shrink-0">EN-US</span>
       </div>
+
+      {lastHeard && (
+        <div className="mt-2 px-2 flex items-center gap-2 animate-fade-in">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground shrink-0">
+            Last attempt
+          </span>
+          <span className="text-xs font-medium text-ink truncate italic">
+            "{lastHeard}"
+          </span>
+        </div>
+      )}
     </div>
   );
 };
