@@ -20,13 +20,14 @@ const VoiceSearchBar = ({
 }: VoiceSearchBarProps) => {
   const lastFinalRef = useRef<string>("");
 
-  const { supported, listening, transcript, start, stop, error } = useVoiceInput({
-    onFinalResult: (text) => {
-      lastFinalRef.current = text;
-      onChange(text);
-      onFinalTranscript?.(text);
-    },
-  });
+  const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
+    useVoiceInput({
+      onFinalResult: (text) => {
+        lastFinalRef.current = text;
+        onChange(text);
+        onFinalTranscript?.(text);
+      },
+    });
 
   // Stream interim transcripts into the input as the user speaks
   useEffect(() => {
@@ -45,8 +46,12 @@ const VoiceSearchBar = ({
     ? "Mic blocked — click 🔒 in address bar → allow microphone, then retry"
     : error === "no-microphone"
     ? "No microphone detected on this device"
+    : error === "no-speech"
+    ? "Didn't catch that — tap mic to try again"
     : error
     ? `Voice error: ${error} — tap mic to retry`
+    : retryCountdown > 0
+    ? `Didn't hear you — retrying in ${retryCountdown}s…`
     : listening
     ? transcript
       ? `● Heard: "${transcript}"`
