@@ -86,6 +86,7 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
     if (!rec || listening) return;
     try {
       setTranscript("");
+      setError(null);
       rec.start();
       setListening(true);
     } catch { /* already started */ }
@@ -98,5 +99,5 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
     setListening(false);
   }, []);
 
-  return { supported, listening, transcript, start, stop, setTranscript };
+  return { supported, listening, transcript, start, stop, setTranscript, error };
 }
