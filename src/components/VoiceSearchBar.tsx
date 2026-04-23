@@ -96,7 +96,11 @@ const VoiceSearchBar = ({
         <span
           className={[
             "text-xs font-mono uppercase tracking-widest truncate",
-            error ? "text-destructive" : "text-muted-foreground",
+            error
+              ? "text-destructive"
+              : retryCountdown > 0
+              ? "text-accent-foreground"
+              : "text-muted-foreground",
           ].join(" ")}
           aria-live="polite"
         >
@@ -104,6 +108,17 @@ const VoiceSearchBar = ({
         </span>
         <span className="text-xs font-mono text-muted-foreground shrink-0">EN-US</span>
       </div>
+
+      {lastHeard && (
+        <div className="mt-2 px-2 flex items-center gap-2 animate-fade-in">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground shrink-0">
+            Last attempt
+          </span>
+          <span className="text-xs font-medium text-ink truncate italic">
+            "{lastHeard}"
+          </span>
+        </div>
+      )}
     </div>
   );
 };
