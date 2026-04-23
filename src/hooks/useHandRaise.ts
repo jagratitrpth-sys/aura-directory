@@ -80,51 +80,30 @@ export function useHandRaise() {
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) throw new Error("Canvas unavailable");
 
-      // Tunables
-      const SAMPLE_TOP = 0.0;          // start at top of frame
-      const SAMPLE_BOTTOM = 0.7;       // ignore bottom 30% (torso area)
-      const FACE_X_MIN = 0.30;         // ignore central horizontal band where
-      const FACE_X_MAX = 0.70;         // the user's face usually sits
-      const FACE_Y_MAX = 0.40;         // only mask face in upper-middle band
-      const MOTION_THRESHOLD = 18;     // per-channel diff to count as "moving"
-      const MIN_AREA_RATIO = 0.012;    // min fraction of sampled pixels
-      const FULL_AREA_RATIO = 0.06;    // area at which confidence = 1
-      const SMOOTHING = 0.35;          // EMA alpha (higher = snappier)
-      const ACTIVATE_FRAMES = 3;       // need N consecutive hits to activate
-      const DEACTIVATE_FRAMES = 6;     // need N consecutive misses to release
+      // Tunables — tuned to be permissive enough that a raised hand reliably
+      // registers, while still rejecting obvious noise.
+      const SAMPLE_TOP = 0.0;          // sample whole frame top-down
+      const SAMPLE_BOTTOM = 0.85;      // ignore very bottom (torso)
+      const MIN_AREA_RATIO = 0.008;    // ~0.8% of sampled pixels = minimum
+      const FULL_AREA_RATIO = 0.05;    // ~5% = full confidence
+      const SMOOTHING = 0.4;           // EMA alpha (higher = snappier)
+      const ACTIVATE_FRAMES = 2;       // need N consecutive hits to activate
+      const DEACTIVATE_FRAMES = 8;     // need N consecutive misses to release
 
       const sampleTopPx = Math.floor(canvas.height * SAMPLE_TOP);
       const sampleBottomPx = Math.floor(canvas.height * SAMPLE_BOTTOM);
       const sampleHeight = sampleBottomPx - sampleTopPx;
-      const faceXMinPx = Math.floor(canvas.width * FACE_X_MIN);
-      const faceXMaxPx = Math.floor(canvas.width * FACE_X_MAX);
-      const faceYMaxPx = Math.floor(canvas.height * FACE_Y_MAX);
 
-      // Skin classifier combining YCbCr + HSV gates (more tone-tolerant
-      // than RGB-only rules and fast enough for per-pixel use).
+      // Skin classifier: YCbCr is the workhorse (tone-tolerant), with a loose
+      // RGB sanity check. Kept permissive so a raised hand always registers.
       const isSkin = (r: number, g: number, b: number): boolean => {
-        // YCbCr
-        const y = 0.299 * r + 0.587 * g + 0.114 * b;
+        // Basic RGB sanity (rejects pure greys / cool colours)
+        if (r < 60 || g < 30 || b < 15) return false;
+        if (r <= g || r <= b) return false;
+        // YCbCr skin band
         const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
         const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
-        const ycbcr = y > 80 && cb > 85 && cb < 135 && cr > 135 && cr < 180;
-        if (!ycbcr) return false;
-
-        // HSV (cheap conversion)
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        const v = max / 255;
-        const s = max === 0 ? 0 : (max - min) / max;
-        let h = 0;
-        if (max !== min) {
-          if (max === r) h = ((g - b) / (max - min)) % 6;
-          else if (max === g) h = (b - r) / (max - min) + 2;
-          else h = (r - g) / (max - min) + 4;
-          h *= 60;
-          if (h < 0) h += 360;
-        }
-        // Skin hue band wraps around the warm side (0–50°)
-        return v > 0.25 && s > 0.15 && s < 0.68 && (h <= 50 || h >= 340);
+        return cb > 77 && cb < 135 && cr > 133 && cr < 180;
       };
 
       const tick = () => {
@@ -132,12 +111,11 @@ export function useHandRaise() {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const frame = ctx.getImageData(0, sampleTopPx, canvas.width, sampleHeight);
           const data = frame.data;
-          const prev = prevFrameRef.current;
+          const w = canvas.width;
 
           let kept = 0;
           let sumX = 0;
           let sumY = 0;
-          const w = canvas.width;
 
           for (let i = 0; i < data.length; i += 4) {
             const r = data[i], g = data[i + 1], b = data[i + 2];
@@ -145,18 +123,6 @@ export function useHandRaise() {
 
             const px = (i >> 2) % w;
             const py = (i >> 2) / w | 0;
-            const absY = py + sampleTopPx;
-
-            // Reject central face band
-            if (absY <= faceYMaxPx && px >= faceXMinPx && px <= faceXMaxPx) continue;
-
-            // Require motion vs previous frame (rejects static skin surfaces)
-            if (prev) {
-              const dr = Math.abs(r - prev[i]);
-              const dg = Math.abs(g - prev[i + 1]);
-              const db = Math.abs(b - prev[i + 2]);
-              if (dr + dg + db < MOTION_THRESHOLD) continue;
-            }
 
             kept++;
             sumX += px;
