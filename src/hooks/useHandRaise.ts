@@ -129,8 +129,6 @@ export function useHandRaise() {
             sumY += py;
           }
 
-          // Save current frame for next motion comparison
-          prevFrameRef.current = new Uint8ClampedArray(data);
 
           const total = (data.length / 4);
           const ratio = kept / total;
