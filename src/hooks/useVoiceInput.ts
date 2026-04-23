@@ -27,7 +27,12 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  const onFinalRef = useRef(onFinalResult);
+
+  // Keep the callback ref fresh without rebuilding the recognizer
+  useEffect(() => { onFinalRef.current = onFinalResult; }, [onFinalResult]);
 
   useEffect(() => {
     const w = window as unknown as {
@@ -54,11 +59,19 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
         if (res.isFinal) final += text;
         else interim += text;
       }
-      const combined = (final || interim).trim();
+      // Always reflect the latest heard text (interim or final) so the
+      // user sees what is being typed in real time.
+      const combined = (final + " " + interim).trim();
       if (combined) setTranscript(combined);
-      if (final && onFinalResult) onFinalResult(final.trim());
+      if (final && onFinalRef.current) onFinalRef.current(final.trim());
     };
-    rec.onerror = () => setListening(false);
+    rec.onerror = (e: unknown) => {
+      const err = (e as { error?: string })?.error;
+      if (err && err !== "no-speech" && err !== "aborted") {
+        setError(err);
+      }
+      setListening(false);
+    };
     rec.onend = () => setListening(false);
 
     recognitionRef.current = rec;
@@ -66,7 +79,7 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
       try { rec.abort(); } catch { /* noop */ }
       recognitionRef.current = null;
     };
-  }, [lang, onFinalResult]);
+  }, [lang]);
 
   const start = useCallback(() => {
     const rec = recognitionRef.current;
