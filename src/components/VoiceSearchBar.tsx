@@ -20,7 +20,7 @@ const VoiceSearchBar = ({
 }: VoiceSearchBarProps) => {
   const lastFinalRef = useRef<string>("");
 
-  const { supported, listening, transcript, start, stop } = useVoiceInput({
+  const { supported, listening, transcript, start, stop, error } = useVoiceInput({
     onFinalResult: (text) => {
       lastFinalRef.current = text;
       onChange(text);
@@ -28,7 +28,7 @@ const VoiceSearchBar = ({
     },
   });
 
-  // Stream interim transcripts into the input
+  // Stream interim transcripts into the input as the user speaks
   useEffect(() => {
     if (listening && transcript) onChange(transcript);
   }, [listening, transcript, onChange]);
@@ -39,6 +39,18 @@ const VoiceSearchBar = ({
 
   const toggle = () => (listening ? stop() : start());
 
+  const statusLabel = !supported
+    ? "Voice unavailable in this browser"
+    : error === "not-allowed"
+    ? "Mic blocked — allow microphone access"
+    : error
+    ? `Voice error: ${error}`
+    : listening
+    ? transcript
+      ? `● Heard: "${transcript}"`
+      : "● Listening — speak now"
+    : "Tap mic or say a query";
+
   return (
     <div className="relative w-full max-w-3xl mx-auto">
       <div className="absolute -inset-4 bg-gradient-aurora opacity-25 blur-3xl rounded-full pointer-events-none" />
@@ -47,7 +59,7 @@ const VoiceSearchBar = ({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={listening ? "Listening… speak now" : placeholder}
           className="flex-1 bg-transparent outline-none text-lg md:text-xl text-ink placeholder:text-muted-foreground font-medium"
         />
         <Hand className="w-5 h-5 text-primary/40 hidden sm:block" />
@@ -55,6 +67,7 @@ const VoiceSearchBar = ({
           onClick={toggle}
           disabled={!supported}
           aria-label={listening ? "Stop listening" : "Start voice input"}
+          aria-pressed={listening}
           className={[
             "relative w-12 h-12 rounded-full flex items-center justify-center transition-all shrink-0",
             listening
@@ -72,15 +85,17 @@ const VoiceSearchBar = ({
           {listening ? <Mic className="w-5 h-5 relative" /> : <MicOff className="w-5 h-5 relative" />}
         </button>
       </div>
-      <div className="flex items-center justify-between mt-3 px-2">
-        <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
-          {!supported
-            ? "Voice unavailable in this browser"
-            : listening
-            ? "● Listening — speak now"
-            : "Tap mic or say a query"}
+      <div className="flex items-center justify-between mt-3 px-2 gap-3">
+        <span
+          className={[
+            "text-xs font-mono uppercase tracking-widest truncate",
+            error ? "text-destructive" : "text-muted-foreground",
+          ].join(" ")}
+          aria-live="polite"
+        >
+          {statusLabel}
         </span>
-        <span className="text-xs font-mono text-muted-foreground">EN-US</span>
+        <span className="text-xs font-mono text-muted-foreground shrink-0">EN-US</span>
       </div>
     </div>
   );
