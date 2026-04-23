@@ -40,16 +40,18 @@ const VoiceSearchBar = ({
   const toggle = () => (listening ? stop() : start());
 
   const statusLabel = !supported
-    ? "Voice unavailable in this browser"
+    ? "Voice unavailable in this browser — try Chrome or Edge"
     : error === "not-allowed"
-    ? "Mic blocked — allow microphone access"
+    ? "Mic blocked — click 🔒 in address bar → allow microphone, then retry"
+    : error === "no-microphone"
+    ? "No microphone detected on this device"
     : error
-    ? `Voice error: ${error}`
+    ? `Voice error: ${error} — tap mic to retry`
     : listening
     ? transcript
       ? `● Heard: "${transcript}"`
       : "● Listening — speak now"
-    : "Tap mic or say a query";
+    : "Tap mic and speak";
 
   return (
     <div className="relative w-full max-w-3xl mx-auto">
