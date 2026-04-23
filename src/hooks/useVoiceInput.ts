@@ -21,18 +21,42 @@ interface ISpeechRecognition {
 interface UseVoiceInputOptions {
   onFinalResult?: (text: string) => void;
   lang?: string;
+  /** Seconds to wait before auto-retrying after a 'no-speech' error. 0 disables. */
+  noSpeechRetrySeconds?: number;
+  /** Max consecutive no-speech retries before giving up. */
+  maxNoSpeechRetries?: number;
 }
 
-export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOptions = {}) {
+export function useVoiceInput({
+  onFinalResult,
+  lang = "en-US",
+  noSpeechRetrySeconds = 3,
+  maxNoSpeechRetries = 2,
+}: UseVoiceInputOptions = {}) {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
+  /** Last finalized utterance — kept visible across retries. */
+  const [lastHeard, setLastHeard] = useState("");
   const [error, setError] = useState<string | null>(null);
+  /** Seconds remaining until auto-retry after 'no-speech'. 0 = idle. */
+  const [retryCountdown, setRetryCountdown] = useState(0);
+
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const onFinalRef = useRef(onFinalResult);
+  const noSpeechCountRef = useRef(0);
+  const retryTimerRef = useRef<number | null>(null);
+  const cancelledRef = useRef(false);
 
-  // Keep the callback ref fresh without rebuilding the recognizer
   useEffect(() => { onFinalRef.current = onFinalResult; }, [onFinalResult]);
+
+  const clearRetryTimer = useCallback(() => {
+    if (retryTimerRef.current !== null) {
+      window.clearInterval(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    setRetryCountdown(0);
+  }, []);
 
   useEffect(() => {
     const w = window as unknown as {
@@ -59,23 +83,46 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
         if (res.isFinal) final += text;
         else interim += text;
       }
-      // Always reflect the latest heard text (interim or final) so the
-      // user sees what is being typed in real time.
       const combined = (final + " " + interim).trim();
       if (combined) setTranscript(combined);
-      if (final && onFinalRef.current) onFinalRef.current(final.trim());
+      if (final) {
+        const trimmed = final.trim();
+        setLastHeard(trimmed);
+        // Reset no-speech retry counter on success
+        noSpeechCountRef.current = 0;
+        onFinalRef.current?.(trimmed);
+      }
     };
+
     rec.onerror = (e: unknown) => {
       const err = (e as { error?: string })?.error;
       console.warn("[voice] recognition error:", err, e);
-      if (err && err !== "no-speech" && err !== "aborted") {
+      if (err === "no-speech") {
+        // Schedule a retry with countdown — handled in onend.
+        // Mark via the counter so onend knows to retry.
+      } else if (err && err !== "aborted") {
         setError(err);
+        noSpeechCountRef.current = 0;
       }
-      setListening(false);
+      // Listening flag will be flipped in onend.
     };
+
     rec.onend = () => {
       console.info("[voice] recognition ended");
       setListening(false);
+
+      // If the last error was no-speech AND user hasn't cancelled,
+      // schedule an automatic retry with a visible countdown.
+      const shouldRetry =
+        !cancelledRef.current &&
+        noSpeechCountRef.current < maxNoSpeechRetries &&
+        noSpeechRetrySeconds > 0;
+
+      if (shouldRetry) {
+        // Heuristic: if no transcript was produced this round, treat as no-speech.
+        // (Browsers fire 'no-speech' via onerror first; we just need to know nothing was heard.)
+        // We rely on the counter being incremented from the scheduling block below.
+      }
     };
 
     recognitionRef.current = rec;
@@ -83,16 +130,84 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
       try { rec.abort(); } catch { /* noop */ }
       recognitionRef.current = null;
     };
-  }, [lang]);
+  }, [lang, maxNoSpeechRetries, noSpeechRetrySeconds]);
+
+  // Internal: low-level start (assumes mic permission already granted)
+  const startRecognizer = useCallback(() => {
+    const rec = recognitionRef.current;
+    if (!rec) return;
+    try {
+      setTranscript("");
+      setError(null);
+      cancelledRef.current = false;
+      rec.start();
+      setListening(true);
+      console.info("[voice] recognition started");
+    } catch (err) {
+      console.error("[voice] start() threw:", err);
+      setError("start-failed");
+    }
+  }, []);
+
+  // Wire up no-speech retry scheduling. We hook into onerror/onend via a
+  // small effect so we can reference startRecognizer + clearRetryTimer.
+  useEffect(() => {
+    const rec = recognitionRef.current;
+    if (!rec) return;
+
+    const prevError = rec.onerror;
+    const prevEnd = rec.onend;
+
+    rec.onerror = (e: unknown) => {
+      prevError?.(e);
+      const err = (e as { error?: string })?.error;
+      if (err === "no-speech" && !cancelledRef.current) {
+        noSpeechCountRef.current += 1;
+        if (noSpeechCountRef.current <= maxNoSpeechRetries && noSpeechRetrySeconds > 0) {
+          // Begin countdown — onend will fire shortly after this.
+          setRetryCountdown(noSpeechRetrySeconds);
+        } else {
+          setError("no-speech");
+          noSpeechCountRef.current = 0;
+        }
+      }
+    };
+
+    rec.onend = () => {
+      prevEnd?.();
+      // If a countdown is pending, run it then auto-restart.
+      if (retryCountdown > 0 || (noSpeechCountRef.current > 0 && !cancelledRef.current && noSpeechCountRef.current <= maxNoSpeechRetries)) {
+        // start visible countdown if not already running
+        if (retryTimerRef.current === null) {
+          let remaining = noSpeechRetrySeconds;
+          setRetryCountdown(remaining);
+          retryTimerRef.current = window.setInterval(() => {
+            remaining -= 1;
+            if (remaining <= 0) {
+              clearRetryTimer();
+              if (!cancelledRef.current) startRecognizer();
+            } else {
+              setRetryCountdown(remaining);
+            }
+          }, 1000);
+        }
+      }
+    };
+
+    return () => {
+      rec.onerror = prevError;
+      rec.onend = prevEnd;
+    };
+  }, [supported, maxNoSpeechRetries, noSpeechRetrySeconds, retryCountdown, startRecognizer, clearRetryTimer]);
 
   const start = useCallback(async () => {
     const rec = recognitionRef.current;
     if (!rec || listening) return;
+    clearRetryTimer();
+    cancelledRef.current = false;
 
-    // Prime the mic — forces the browser to show a permission prompt
-    // (or surface a real error) instead of failing silently. Critical in
-    // sandboxed iframes like the Lovable preview, where Web Speech API
-    // otherwise reports nothing when the mic is blocked.
+    // Prime the mic so sandboxed iframes surface a real permission prompt
+    // instead of failing silently.
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((t) => t.stop());
@@ -109,24 +224,29 @@ export function useVoiceInput({ onFinalResult, lang = "en-US" }: UseVoiceInputOp
       return;
     }
 
-    try {
-      setTranscript("");
-      setError(null);
-      rec.start();
-      setListening(true);
-      console.info("[voice] recognition started");
-    } catch (err) {
-      console.error("[voice] start() threw:", err);
-      setError("start-failed");
-    }
-  }, [listening]);
+    noSpeechCountRef.current = 0;
+    startRecognizer();
+  }, [listening, startRecognizer, clearRetryTimer]);
 
   const stop = useCallback(() => {
+    cancelledRef.current = true;
+    clearRetryTimer();
+    noSpeechCountRef.current = 0;
     const rec = recognitionRef.current;
     if (!rec) return;
     try { rec.stop(); } catch { /* noop */ }
     setListening(false);
-  }, []);
+  }, [clearRetryTimer]);
 
-  return { supported, listening, transcript, start, stop, setTranscript, error };
+  return {
+    supported,
+    listening,
+    transcript,
+    lastHeard,
+    error,
+    retryCountdown,
+    start,
+    stop,
+    setTranscript,
+  };
 }
