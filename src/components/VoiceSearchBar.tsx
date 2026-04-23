@@ -79,6 +79,8 @@ const VoiceSearchBar = ({
             "relative w-12 h-12 rounded-full flex items-center justify-center transition-all shrink-0",
             listening
               ? "bg-gradient-mint text-primary-foreground shadow-glow"
+              : retryCountdown > 0
+              ? "bg-accent text-accent-foreground"
               : "bg-ink text-ink-foreground hover:scale-105",
             !supported && "opacity-50 cursor-not-allowed",
           ].join(" ")}
@@ -89,7 +91,15 @@ const VoiceSearchBar = ({
               <span className="absolute inset-0 rounded-full bg-primary/30 animate-ring-pulse [animation-delay:0.6s]" />
             </>
           )}
-          {listening ? <Mic className="w-5 h-5 relative" /> : <MicOff className="w-5 h-5 relative" />}
+          {retryCountdown > 0 ? (
+            <span className="relative font-mono text-sm font-bold tabular-nums">
+              {retryCountdown}
+            </span>
+          ) : listening ? (
+            <Mic className="w-5 h-5 relative" />
+          ) : (
+            <MicOff className="w-5 h-5 relative" />
+          )}
         </button>
       </div>
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
