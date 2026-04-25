@@ -24,6 +24,17 @@ const DEPARTMENTS: Department[] = [
   { name: "General Medicine", category: "General", floor: "1st Floor", wing: "Main Lobby", Icon: Stethoscope },
   { name: "Emergency", category: "Emergency", floor: "Ground Floor", wing: "Main Entrance", Icon: Activity },
   { name: "Pharmacy", category: "General", floor: "Ground Floor", wing: "South Wing", Icon: Pill },
+  { name: "ENT", category: "Specialty", floor: "2nd Floor", wing: "West Wing", Icon: Ear },
+  { name: "Dental Care", category: "Specialty", floor: "1st Floor", wing: "East Wing", Icon: Smile },
+  { name: "Dermatology", category: "Specialty", floor: "3rd Floor", wing: "North Wing", Icon: Scan },
+  { name: "Radiology", category: "General", floor: "Ground Floor", wing: "West Wing", Icon: Microscope },
+  { name: "Laboratory", category: "General", floor: "Ground Floor", wing: "North Wing", Icon: FlaskConical },
+  { name: "Vaccination", category: "General", floor: "1st Floor", wing: "North Wing", Icon: Syringe },
+  { name: "Trauma Care", category: "Emergency", floor: "Ground Floor", wing: "East Entrance", Icon: Bandage },
+  { name: "ICU", category: "Emergency", floor: "5th Floor", wing: "Central Wing", Icon: HeartPulse },
+  { name: "Maternity", category: "Specialty", floor: "4th Floor", wing: "South Wing", Icon: Baby },
+  { name: "Nephrology", category: "Specialty", floor: "3rd Floor", wing: "West Wing", Icon: Droplet },
+  { name: "Pulmonology", category: "Specialty", floor: "4th Floor", wing: "East Wing", Icon: Wind },
 ];
 
 const CATEGORIES = ["All", "General", "Specialty", "Emergency"] as const;
