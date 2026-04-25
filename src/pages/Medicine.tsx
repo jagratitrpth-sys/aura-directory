@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Pill, Hand, MapPin, CheckCircle2, AlertCircle, XCircle, Package } from "lucide-react";
+import { Pill, Hand, MapPin, CheckCircle2, AlertCircle, XCircle, Package, Clock, Utensils, AlertTriangle, FileText, X } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 
