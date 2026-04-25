@@ -35,6 +35,12 @@ const REASONS = [
   "Prescription refill",
   "Specialist referral",
   "Emergency / urgent",
+  "Vaccination",
+  "Imaging / X-ray",
+  "Blood test",
+  "Physical therapy",
+  "Pre-surgery consult",
+  "Mental health visit",
 ];
 
 const DEPARTMENTS = [
@@ -46,6 +52,17 @@ const DEPARTMENTS = [
   { name: "Ophthalmology", Icon: Eye },
   { name: "Emergency", Icon: Activity },
   { name: "Pharmacy", Icon: Pill },
+  { name: "ENT", Icon: Ear },
+  { name: "Dental Care", Icon: Smile },
+  { name: "Dermatology", Icon: Scan },
+  { name: "Radiology", Icon: Microscope },
+  { name: "Laboratory", Icon: FlaskConical },
+  { name: "Vaccination", Icon: Syringe },
+  { name: "Trauma Care", Icon: Bandage },
+  { name: "ICU", Icon: HeartPulse },
+  { name: "Maternity", Icon: Baby },
+  { name: "Nephrology", Icon: Droplet },
+  { name: "Pulmonology", Icon: Wind },
 ];
 
 /* ---------- Reusable bits ---------- */
