@@ -96,7 +96,11 @@ const Medicine = () => {
 
         {/* Featured result */}
         {featured && (
-          <div className="mt-8 rounded-3xl bg-card border-2 border-primary shadow-glow p-8 grid md:grid-cols-3 gap-6 items-center">
+          <button
+            onClick={() => setSelected(featured)}
+            className="mt-8 w-full text-left rounded-3xl bg-card border-2 border-primary shadow-glow p-8 grid md:grid-cols-3 gap-6 items-center hover:scale-[1.01] transition-transform"
+            aria-label={`View details for ${featured.name}`}
+          >
             <div className="flex items-center gap-5 md:col-span-2">
               <div className="w-20 h-20 rounded-2xl bg-gradient-mint flex items-center justify-center shrink-0">
                 <Pill className="w-10 h-10 text-primary-foreground" strokeWidth={2.4} />
@@ -128,8 +132,9 @@ const Medicine = () => {
                   <p className="text-sm text-muted-foreground font-medium">{featured.counter}</p>
                 </div>
               </div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mt-3">Tap for full details →</p>
             </div>
-          </div>
+          </button>
         )}
 
         {/* Other results */}
