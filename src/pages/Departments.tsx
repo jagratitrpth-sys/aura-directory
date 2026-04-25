@@ -54,12 +54,22 @@ const Departments = () => {
   }, [params]);
 
   const filtered = useMemo(() => {
-    return DEPARTMENTS.filter((d) => {
-      const matchCat = category === "All" || d.category === category;
-      const matchQ = d.name.toLowerCase().includes(query.toLowerCase());
-      return matchCat && matchQ;
-    });
+    const inCategory = DEPARTMENTS.filter(
+      (d) => category === "All" || d.category === category
+    );
+    if (!query.trim()) return inCategory;
+    return fuzzySearch(inCategory, query, (d) => [d.name, d.category, d.wing]).map((r) => r.item);
   }, [query, category]);
+
+  const suggestions: SearchSuggestion[] = useMemo(
+    () =>
+      filtered.slice(0, 6).map((d) => ({
+        id: d.name,
+        label: d.name,
+        hint: `${d.floor} · ${d.wing}`,
+      })),
+    [filtered]
+  );
 
   const handleConfirm = () => {
     setConfirmed(true);
@@ -88,6 +98,11 @@ const Departments = () => {
           value={query}
           onChange={setQuery}
           placeholder="Say or type a department name…"
+          suggestions={suggestions}
+          onSuggestionSelect={(s) => {
+            const found = DEPARTMENTS.find((d) => d.name === s.id);
+            if (found) setSelected(found);
+          }}
         />
 
         {/* Categories */}
