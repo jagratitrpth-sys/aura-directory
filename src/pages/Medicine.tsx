@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pill, Hand, MapPin, CheckCircle2, AlertCircle, XCircle, Package, Clock, Utensils, AlertTriangle, FileText, X } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
-import VoiceSearchBar from "@/components/VoiceSearchBar";
+import VoiceSearchBar, { type SearchSuggestion } from "@/components/VoiceSearchBar";
+import { fuzzySearch } from "@/lib/fuzzyMatch";
 
 type Stock = "in" | "low" | "out";
 
@@ -64,12 +65,18 @@ const Medicine = () => {
 
   const filtered = useMemo(
     () =>
-      MEDICINES.filter(
-        (m) =>
-          m.name.toLowerCase().includes(query.toLowerCase()) ||
-          m.generic.toLowerCase().includes(query.toLowerCase())
-      ),
+      fuzzySearch(MEDICINES, query, (m) => [m.name, m.generic]).map((r) => r.item),
     [query]
+  );
+
+  const suggestions: SearchSuggestion[] = useMemo(
+    () =>
+      filtered.slice(0, 6).map((m) => ({
+        id: m.name,
+        label: m.name,
+        hint: `${m.generic} · ${stockMeta[m.stock].label}`,
+      })),
+    [filtered]
   );
 
   const featured = filtered[0];
@@ -92,6 +99,11 @@ const Medicine = () => {
           value={query}
           onChange={setQuery}
           placeholder="Search by medicine name or generic…"
+          suggestions={suggestions}
+          onSuggestionSelect={(s) => {
+            const found = MEDICINES.find((m) => m.name === s.id);
+            if (found) setSelected(found);
+          }}
         />
 
         {/* Featured result */}

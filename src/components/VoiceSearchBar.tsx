@@ -1,6 +1,15 @@
-import { Hand, Mic, MicOff, Search } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Hand, Mic, MicOff, Search, CornerDownLeft } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+
+export interface SearchSuggestion {
+  /** Stable key for React */
+  id: string;
+  /** Primary line shown in the suggestion (e.g. medicine name) */
+  label: string;
+  /** Optional secondary line (e.g. generic, location) */
+  hint?: string;
+}
 
 interface VoiceSearchBarProps {
   value: string;
@@ -9,6 +18,10 @@ interface VoiceSearchBarProps {
   autoStart?: boolean;
   /** Notified on final transcript so caller can also navigate / act. */
   onFinalTranscript?: (text: string) => void;
+  /** Optional autocomplete suggestions, already sorted by relevance. */
+  suggestions?: SearchSuggestion[];
+  /** Called when the user picks a suggestion (click / Enter). */
+  onSuggestionSelect?: (s: SearchSuggestion) => void;
 }
 
 const VoiceSearchBar = ({
@@ -17,8 +30,13 @@ const VoiceSearchBar = ({
   placeholder = "Say a department or medicine name…",
   autoStart = false,
   onFinalTranscript,
+  suggestions,
+  onSuggestionSelect,
 }: VoiceSearchBarProps) => {
   const lastFinalRef = useRef<string>("");
+  const [focused, setFocused] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const blurTimer = useRef<number | null>(null);
 
   const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
     useVoiceInput({
@@ -38,7 +56,35 @@ const VoiceSearchBar = ({
     if (autoStart && supported) start();
   }, [autoStart, supported, start]);
 
+  // Reset highlighted suggestion when list changes
+  useEffect(() => { setActiveIdx(0); }, [suggestions?.length, value]);
+
   const toggle = () => (listening ? stop() : start());
+
+  const showSuggestions =
+    !!suggestions && suggestions.length > 0 && (focused || listening) && value.trim().length > 0;
+
+  const pickSuggestion = (s: SearchSuggestion) => {
+    onChange(s.label);
+    onSuggestionSelect?.(s);
+    setFocused(false);
+  };
+
+  const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || !suggestions) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      const s = suggestions[activeIdx];
+      if (s) { e.preventDefault(); pickSuggestion(s); }
+    } else if (e.key === "Escape") {
+      setFocused(false);
+    }
+  };
 
   const statusLabel = !supported
     ? "Voice unavailable in this browser — try Chrome or Edge"
@@ -66,7 +112,19 @@ const VoiceSearchBar = ({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKey}
+          onFocus={() => {
+            if (blurTimer.current) window.clearTimeout(blurTimer.current);
+            setFocused(true);
+          }}
+          onBlur={() => {
+            // Delay so click on a suggestion still registers
+            blurTimer.current = window.setTimeout(() => setFocused(false), 150);
+          }}
           placeholder={listening ? "Listening… speak now" : placeholder}
+          aria-autocomplete="list"
+          aria-expanded={showSuggestions}
+          aria-controls="voice-search-suggestions"
           className="flex-1 bg-transparent outline-none text-lg md:text-xl text-ink placeholder:text-muted-foreground font-medium"
         />
         <Hand className="w-5 h-5 text-primary/40 hidden sm:block" />
@@ -102,6 +160,45 @@ const VoiceSearchBar = ({
           )}
         </button>
       </div>
+
+      {/* Autocomplete dropdown */}
+      {showSuggestions && suggestions && (
+        <ul
+          id="voice-search-suggestions"
+          role="listbox"
+          className="absolute z-30 left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-glow overflow-hidden animate-fade-in max-h-80 overflow-y-auto"
+        >
+          {suggestions.map((s, i) => {
+            const active = i === activeIdx;
+            return (
+              <li key={s.id} role="option" aria-selected={active}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pickSuggestion(s)}
+                  onMouseEnter={() => setActiveIdx(i)}
+                  className={[
+                    "w-full text-left px-5 py-3 flex items-center gap-3 transition-colors border-b border-border last:border-b-0",
+                    active ? "bg-gradient-mint/15" : "hover:bg-secondary/60",
+                  ].join(" ")}
+                >
+                  <Search className={`w-4 h-4 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif text-base text-ink truncate">{s.label}</p>
+                    {s.hint && (
+                      <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground truncate">
+                        {s.hint}
+                      </p>
+                    )}
+                  </div>
+                  {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
         <span
           className={[
