@@ -14,29 +14,36 @@ type Medicine = {
   pharmacy: string;
   counter: string;
   price: string;
+  form: string;
+  strength: string;
+  dosage: string;
+  frequency: string;
+  withFood: string;
+  warnings: string;
+  prescription: boolean;
 };
 
 const MEDICINES: Medicine[] = [
-  { name: "Paracetamol", generic: "Acetaminophen 500mg", stock: "in", units: 248, pharmacy: "Main Pharmacy", counter: "Counter 3 · Ground Floor", price: "$2.50" },
-  { name: "Ibuprofen", generic: "Ibuprofen 400mg", stock: "in", units: 156, pharmacy: "Main Pharmacy", counter: "Counter 1 · Ground Floor", price: "$3.20" },
-  { name: "Amoxicillin", generic: "Amoxicillin 500mg", stock: "low", units: 12, pharmacy: "Outpatient Pharmacy", counter: "Counter 2 · 1st Floor", price: "$8.40" },
-  { name: "Metformin", generic: "Metformin HCl 850mg", stock: "in", units: 320, pharmacy: "Main Pharmacy", counter: "Counter 4 · Ground Floor", price: "$5.10" },
-  { name: "Aspirin", generic: "Acetylsalicylic Acid 75mg", stock: "in", units: 410, pharmacy: "Main Pharmacy", counter: "Counter 2 · Ground Floor", price: "$1.90" },
-  { name: "Insulin Glargine", generic: "Lantus 100 IU/ml", stock: "low", units: 6, pharmacy: "Specialty Pharmacy", counter: "Counter 1 · 2nd Floor", price: "$42.00" },
-  { name: "Salbutamol Inhaler", generic: "Albuterol 100mcg", stock: "out", units: 0, pharmacy: "Outpatient Pharmacy", counter: "Counter 3 · 1st Floor", price: "$11.75" },
-  { name: "Omeprazole", generic: "Omeprazole 20mg", stock: "in", units: 188, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$4.30" },
-  { name: "Atorvastatin", generic: "Atorvastatin 20mg", stock: "in", units: 142, pharmacy: "Main Pharmacy", counter: "Counter 3 · Ground Floor", price: "$6.80" },
-  { name: "Amlodipine", generic: "Amlodipine 5mg", stock: "in", units: 220, pharmacy: "Main Pharmacy", counter: "Counter 4 · Ground Floor", price: "$3.50" },
-  { name: "Losartan", generic: "Losartan Potassium 50mg", stock: "in", units: 175, pharmacy: "Main Pharmacy", counter: "Counter 4 · Ground Floor", price: "$4.90" },
-  { name: "Levothyroxine", generic: "Levothyroxine 50mcg", stock: "low", units: 18, pharmacy: "Specialty Pharmacy", counter: "Counter 2 · 2nd Floor", price: "$7.20" },
-  { name: "Azithromycin", generic: "Azithromycin 250mg", stock: "in", units: 96, pharmacy: "Outpatient Pharmacy", counter: "Counter 2 · 1st Floor", price: "$9.60" },
-  { name: "Ciprofloxacin", generic: "Ciprofloxacin 500mg", stock: "out", units: 0, pharmacy: "Outpatient Pharmacy", counter: "Counter 1 · 1st Floor", price: "$10.20" },
-  { name: "Cetirizine", generic: "Cetirizine HCl 10mg", stock: "in", units: 305, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$1.40" },
-  { name: "Loratadine", generic: "Loratadine 10mg", stock: "in", units: 268, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$2.10" },
-  { name: "Pantoprazole", generic: "Pantoprazole 40mg", stock: "in", units: 134, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$5.60" },
-  { name: "Diclofenac Gel", generic: "Diclofenac 1% topical", stock: "low", units: 9, pharmacy: "Outpatient Pharmacy", counter: "Counter 4 · 1st Floor", price: "$6.00" },
-  { name: "Vitamin D3", generic: "Cholecalciferol 1000 IU", stock: "in", units: 540, pharmacy: "Main Pharmacy", counter: "Counter 6 · Ground Floor", price: "$3.80" },
-  { name: "Warfarin", generic: "Warfarin Sodium 5mg", stock: "low", units: 14, pharmacy: "Specialty Pharmacy", counter: "Counter 1 · 2nd Floor", price: "$8.90" },
+  { name: "Paracetamol", generic: "Acetaminophen 500mg", stock: "in", units: 248, pharmacy: "Main Pharmacy", counter: "Counter 3 · Ground Floor", price: "$2.50", form: "Tablet", strength: "500 mg", dosage: "1–2 tablets", frequency: "Every 4–6 hours, max 8/day", withFood: "With or without food", warnings: "Avoid alcohol. Do not exceed 4g per day.", prescription: false },
+  { name: "Ibuprofen", generic: "Ibuprofen 400mg", stock: "in", units: 156, pharmacy: "Main Pharmacy", counter: "Counter 1 · Ground Floor", price: "$3.20", form: "Tablet", strength: "400 mg", dosage: "1 tablet", frequency: "Every 6–8 hours, max 3/day", withFood: "Take with food", warnings: "May cause stomach upset. Avoid if pregnant.", prescription: false },
+  { name: "Amoxicillin", generic: "Amoxicillin 500mg", stock: "low", units: 12, pharmacy: "Outpatient Pharmacy", counter: "Counter 2 · 1st Floor", price: "$8.40", form: "Capsule", strength: "500 mg", dosage: "1 capsule", frequency: "Every 8 hours for 7 days", withFood: "With or without food", warnings: "Complete full course. Allergic reaction risk.", prescription: true },
+  { name: "Metformin", generic: "Metformin HCl 850mg", stock: "in", units: 320, pharmacy: "Main Pharmacy", counter: "Counter 4 · Ground Floor", price: "$5.10", form: "Tablet", strength: "850 mg", dosage: "1 tablet", frequency: "Twice daily", withFood: "Take with meals", warnings: "Monitor kidney function. Avoid alcohol.", prescription: true },
+  { name: "Aspirin", generic: "Acetylsalicylic Acid 75mg", stock: "in", units: 410, pharmacy: "Main Pharmacy", counter: "Counter 2 · Ground Floor", price: "$1.90", form: "Tablet", strength: "75 mg", dosage: "1 tablet", frequency: "Once daily", withFood: "Take with food", warnings: "Not for under 16. Bleeding risk.", prescription: false },
+  { name: "Insulin Glargine", generic: "Lantus 100 IU/ml", stock: "low", units: 6, pharmacy: "Specialty Pharmacy", counter: "Counter 1 · 2nd Floor", price: "$42.00", form: "Injection", strength: "100 IU/ml", dosage: "As prescribed", frequency: "Once daily, same time", withFood: "Independent of meals", warnings: "Refrigerate. Rotate injection sites.", prescription: true },
+  { name: "Salbutamol Inhaler", generic: "Albuterol 100mcg", stock: "out", units: 0, pharmacy: "Outpatient Pharmacy", counter: "Counter 3 · 1st Floor", price: "$11.75", form: "Inhaler", strength: "100 mcg/puff", dosage: "1–2 puffs", frequency: "Every 4–6 hours as needed", withFood: "N/A", warnings: "Shake well. Rinse mouth after use.", prescription: true },
+  { name: "Omeprazole", generic: "Omeprazole 20mg", stock: "in", units: 188, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$4.30", form: "Capsule", strength: "20 mg", dosage: "1 capsule", frequency: "Once daily", withFood: "Before breakfast", warnings: "Long-term use may affect bone density.", prescription: false },
+  { name: "Atorvastatin", generic: "Atorvastatin 20mg", stock: "in", units: 142, pharmacy: "Main Pharmacy", counter: "Counter 3 · Ground Floor", price: "$6.80", form: "Tablet", strength: "20 mg", dosage: "1 tablet", frequency: "Once daily, evening", withFood: "With or without food", warnings: "Report muscle pain. Avoid grapefruit.", prescription: true },
+  { name: "Amlodipine", generic: "Amlodipine 5mg", stock: "in", units: 220, pharmacy: "Main Pharmacy", counter: "Counter 4 · Ground Floor", price: "$3.50", form: "Tablet", strength: "5 mg", dosage: "1 tablet", frequency: "Once daily", withFood: "With or without food", warnings: "May cause ankle swelling.", prescription: true },
+  { name: "Losartan", generic: "Losartan Potassium 50mg", stock: "in", units: 175, pharmacy: "Main Pharmacy", counter: "Counter 4 · Ground Floor", price: "$4.90", form: "Tablet", strength: "50 mg", dosage: "1 tablet", frequency: "Once daily", withFood: "With or without food", warnings: "Avoid in pregnancy. Monitor potassium.", prescription: true },
+  { name: "Levothyroxine", generic: "Levothyroxine 50mcg", stock: "low", units: 18, pharmacy: "Specialty Pharmacy", counter: "Counter 2 · 2nd Floor", price: "$7.20", form: "Tablet", strength: "50 mcg", dosage: "1 tablet", frequency: "Once daily, morning", withFood: "Empty stomach, 30 min before food", warnings: "Take consistently at the same time.", prescription: true },
+  { name: "Azithromycin", generic: "Azithromycin 250mg", stock: "in", units: 96, pharmacy: "Outpatient Pharmacy", counter: "Counter 2 · 1st Floor", price: "$9.60", form: "Tablet", strength: "250 mg", dosage: "2 tablets day 1, then 1", frequency: "Once daily for 5 days", withFood: "With or without food", warnings: "Complete full course. May cause diarrhea.", prescription: true },
+  { name: "Ciprofloxacin", generic: "Ciprofloxacin 500mg", stock: "out", units: 0, pharmacy: "Outpatient Pharmacy", counter: "Counter 1 · 1st Floor", price: "$10.20", form: "Tablet", strength: "500 mg", dosage: "1 tablet", frequency: "Twice daily for 7–14 days", withFood: "With or without food", warnings: "Avoid dairy near dose. Tendon risk.", prescription: true },
+  { name: "Cetirizine", generic: "Cetirizine HCl 10mg", stock: "in", units: 305, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$1.40", form: "Tablet", strength: "10 mg", dosage: "1 tablet", frequency: "Once daily", withFood: "With or without food", warnings: "May cause drowsiness.", prescription: false },
+  { name: "Loratadine", generic: "Loratadine 10mg", stock: "in", units: 268, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$2.10", form: "Tablet", strength: "10 mg", dosage: "1 tablet", frequency: "Once daily", withFood: "With or without food", warnings: "Generally non-drowsy.", prescription: false },
+  { name: "Pantoprazole", generic: "Pantoprazole 40mg", stock: "in", units: 134, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$5.60", form: "Tablet", strength: "40 mg", dosage: "1 tablet", frequency: "Once daily", withFood: "Before breakfast", warnings: "Swallow whole, do not crush.", prescription: false },
+  { name: "Diclofenac Gel", generic: "Diclofenac 1% topical", stock: "low", units: 9, pharmacy: "Outpatient Pharmacy", counter: "Counter 4 · 1st Floor", price: "$6.00", form: "Topical Gel", strength: "1%", dosage: "2–4 g to affected area", frequency: "3–4 times daily", withFood: "N/A — external use", warnings: "Do not apply to broken skin.", prescription: false },
+  { name: "Vitamin D3", generic: "Cholecalciferol 1000 IU", stock: "in", units: 540, pharmacy: "Main Pharmacy", counter: "Counter 6 · Ground Floor", price: "$3.80", form: "Soft Gel", strength: "1000 IU", dosage: "1 capsule", frequency: "Once daily", withFood: "Take with a fatty meal", warnings: "Do not exceed 4000 IU/day.", prescription: false },
+  { name: "Warfarin", generic: "Warfarin Sodium 5mg", stock: "low", units: 14, pharmacy: "Specialty Pharmacy", counter: "Counter 1 · 2nd Floor", price: "$8.90", form: "Tablet", strength: "5 mg", dosage: "As prescribed (INR-based)", frequency: "Once daily, same time", withFood: "With or without food", warnings: "Regular INR tests. Avoid vitamin K spikes.", prescription: true },
 ];
 
 const stockMeta: Record<Stock, { label: string; Icon: typeof CheckCircle2; classes: string; dot: string }> = {
