@@ -176,40 +176,128 @@ const Medicine = () => {
       </section>
 
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm animate-fade-in p-6" onClick={() => setSelected(null)}>
-          <div className="bg-card rounded-3xl shadow-glow border-2 border-primary max-w-md w-full p-8" onClick={(e) => e.stopPropagation()}>
-            <div className="w-20 h-20 rounded-2xl bg-gradient-mint mx-auto flex items-center justify-center mb-5">
-              <Pill className="w-10 h-10 text-primary-foreground" strokeWidth={2.4} />
-            </div>
-            <h2 className="text-4xl font-serif text-ink tracking-tight text-center">{selected.name}</h2>
-            <p className="text-muted-foreground font-medium text-center mt-1">{selected.generic}</p>
-
-            <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-between bg-secondary/60 rounded-xl px-4 py-3 border border-border">
-                <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Stock</span>
-                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${stockMeta[selected.stock].classes}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${stockMeta[selected.stock].dot}`} />
-                  {stockMeta[selected.stock].label} · {selected.units}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 backdrop-blur-sm animate-fade-in p-4 md:p-6"
+          onClick={() => setSelected(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="med-detail-title"
+        >
+          <div
+            className="bg-card rounded-3xl shadow-glow border-2 border-primary max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="relative bg-gradient-ink text-ink-foreground p-6 md:p-8 rounded-t-3xl">
+              <button
+                onClick={() => setSelected(null)}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-ink-foreground/10 hover:bg-ink-foreground/20 flex items-center justify-center transition-colors"
+                aria-label="Close details"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-mint flex items-center justify-center shrink-0">
+                  <Pill className="w-8 h-8 text-primary-foreground" strokeWidth={2.4} />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-primary">
+                    {selected.prescription ? "Prescription required" : "Over the counter"}
+                  </p>
+                  <h2 id="med-detail-title" className="text-3xl md:text-4xl font-serif tracking-tight truncate">
+                    {selected.name}
+                  </h2>
+                  <p className="font-medium opacity-80 truncate">{selected.generic}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mt-5">
+                <span
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-card ${stockMeta[selected.stock].classes}`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${stockMeta[selected.stock].dot} ${selected.stock !== "out" ? "animate-mic-pulse" : ""}`} />
+                  {stockMeta[selected.stock].label} · {selected.units} units
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-card text-ink">
+                  <Package className="w-3 h-3" />
+                  {selected.form} · {selected.strength}
+                </span>
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full font-mono text-xs bg-card text-ink">
+                  {selected.price}
                 </span>
               </div>
-              <div className="bg-secondary/60 rounded-xl px-4 py-3 border border-border">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-primary mb-1">Pickup</p>
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-primary mt-1 shrink-0" />
-                  <div>
-                    <p className="font-bold text-ink">{selected.pharmacy}</p>
-                    <p className="text-sm text-muted-foreground font-medium">{selected.counter}</p>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 md:p-8 space-y-4">
+              {/* Dosage info */}
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-primary mb-3">Dosage Information</p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="bg-secondary/60 rounded-2xl p-4 border border-border">
+                    <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                      <Pill className="w-3.5 h-3.5 text-primary" />
+                      Dose
+                    </div>
+                    <p className="font-serif text-xl text-ink mt-1">{selected.dosage}</p>
+                  </div>
+                  <div className="bg-secondary/60 rounded-2xl p-4 border border-border">
+                    <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                      <Clock className="w-3.5 h-3.5 text-primary" />
+                      Frequency
+                    </div>
+                    <p className="font-serif text-xl text-ink mt-1 leading-tight">{selected.frequency}</p>
+                  </div>
+                  <div className="bg-secondary/60 rounded-2xl p-4 border border-border sm:col-span-2">
+                    <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                      <Utensils className="w-3.5 h-3.5 text-primary" />
+                      Food &amp; Timing
+                    </div>
+                    <p className="font-medium text-ink mt-1">{selected.withFood}</p>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              onClick={() => setSelected(null)}
-              className="w-full mt-6 py-4 rounded-2xl bg-gradient-mint text-primary-foreground font-bold shadow-card hover:opacity-95 transition-opacity"
-            >
-              Done
-            </button>
+              {/* Pickup */}
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-primary mb-3">Counter Location</p>
+                <div className="bg-gradient-mint/10 rounded-2xl p-5 border-2 border-primary/30">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-mint flex items-center justify-center shrink-0">
+                      <MapPin className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-serif text-2xl text-ink leading-tight">{selected.pharmacy}</p>
+                      <p className="text-sm font-medium text-muted-foreground mt-1">{selected.counter}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warnings */}
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-destructive mb-3 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Important Information
+                </p>
+                <div className="bg-destructive/5 rounded-2xl p-4 border border-destructive/20">
+                  <p className="text-sm font-medium text-ink leading-relaxed">{selected.warnings}</p>
+                </div>
+              </div>
+
+              {selected.prescription && (
+                <div className="flex items-start gap-2 text-xs text-muted-foreground font-medium">
+                  <FileText className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <p>Bring a valid prescription from your physician to the pickup counter.</p>
+                </div>
+              )}
+
+              <button
+                onClick={() => setSelected(null)}
+                className="w-full mt-2 py-4 rounded-2xl bg-gradient-mint text-primary-foreground font-bold shadow-card hover:opacity-95 transition-opacity"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
