@@ -25,6 +25,18 @@ const MEDICINES: Medicine[] = [
   { name: "Insulin Glargine", generic: "Lantus 100 IU/ml", stock: "low", units: 6, pharmacy: "Specialty Pharmacy", counter: "Counter 1 · 2nd Floor", price: "$42.00" },
   { name: "Salbutamol Inhaler", generic: "Albuterol 100mcg", stock: "out", units: 0, pharmacy: "Outpatient Pharmacy", counter: "Counter 3 · 1st Floor", price: "$11.75" },
   { name: "Omeprazole", generic: "Omeprazole 20mg", stock: "in", units: 188, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$4.30" },
+  { name: "Atorvastatin", generic: "Atorvastatin 20mg", stock: "in", units: 142, pharmacy: "Main Pharmacy", counter: "Counter 3 · Ground Floor", price: "$6.80" },
+  { name: "Amlodipine", generic: "Amlodipine 5mg", stock: "in", units: 220, pharmacy: "Main Pharmacy", counter: "Counter 4 · Ground Floor", price: "$3.50" },
+  { name: "Losartan", generic: "Losartan Potassium 50mg", stock: "in", units: 175, pharmacy: "Main Pharmacy", counter: "Counter 4 · Ground Floor", price: "$4.90" },
+  { name: "Levothyroxine", generic: "Levothyroxine 50mcg", stock: "low", units: 18, pharmacy: "Specialty Pharmacy", counter: "Counter 2 · 2nd Floor", price: "$7.20" },
+  { name: "Azithromycin", generic: "Azithromycin 250mg", stock: "in", units: 96, pharmacy: "Outpatient Pharmacy", counter: "Counter 2 · 1st Floor", price: "$9.60" },
+  { name: "Ciprofloxacin", generic: "Ciprofloxacin 500mg", stock: "out", units: 0, pharmacy: "Outpatient Pharmacy", counter: "Counter 1 · 1st Floor", price: "$10.20" },
+  { name: "Cetirizine", generic: "Cetirizine HCl 10mg", stock: "in", units: 305, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$1.40" },
+  { name: "Loratadine", generic: "Loratadine 10mg", stock: "in", units: 268, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$2.10" },
+  { name: "Pantoprazole", generic: "Pantoprazole 40mg", stock: "in", units: 134, pharmacy: "Main Pharmacy", counter: "Counter 5 · Ground Floor", price: "$5.60" },
+  { name: "Diclofenac Gel", generic: "Diclofenac 1% topical", stock: "low", units: 9, pharmacy: "Outpatient Pharmacy", counter: "Counter 4 · 1st Floor", price: "$6.00" },
+  { name: "Vitamin D3", generic: "Cholecalciferol 1000 IU", stock: "in", units: 540, pharmacy: "Main Pharmacy", counter: "Counter 6 · Ground Floor", price: "$3.80" },
+  { name: "Warfarin", generic: "Warfarin Sodium 5mg", stock: "low", units: 14, pharmacy: "Specialty Pharmacy", counter: "Counter 1 · 2nd Floor", price: "$8.90" },
 ];
 
 const stockMeta: Record<Stock, { label: string; Icon: typeof CheckCircle2; classes: string; dot: string }> = {
