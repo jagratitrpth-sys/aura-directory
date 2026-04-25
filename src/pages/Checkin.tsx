@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowRight, ArrowLeft, CheckCircle2, User, MessageSquare, Stethoscope,
   Heart, Brain, Bone, Baby, Eye, Activity, Pill, Sparkles, Mic,
-  RotateCcw, Plus, Clock, X,
+  RotateCcw, Plus, Clock, X, Ear, Smile, Scan, Microscope, FlaskConical,
+  Syringe, Bandage, HeartPulse, Droplet, Wind,
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
