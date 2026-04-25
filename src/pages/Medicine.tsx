@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Pill, Hand, MapPin, CheckCircle2, AlertCircle, XCircle, Package, Clock, Utensils, AlertTriangle, FileText, X } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
-import VoiceSearchBar from "@/components/VoiceSearchBar";
+import VoiceSearchBar, { type SearchSuggestion } from "@/components/VoiceSearchBar";
+import { fuzzySearch } from "@/lib/fuzzyMatch";
 
 type Stock = "in" | "low" | "out";
 
