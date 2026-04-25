@@ -5,7 +5,8 @@ import {
   Ear, Smile, Microscope, Scan, Syringe, FlaskConical, Bandage, HeartPulse, Droplet, Wind,
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
-import VoiceSearchBar from "@/components/VoiceSearchBar";
+import VoiceSearchBar, { type SearchSuggestion } from "@/components/VoiceSearchBar";
+import { fuzzySearch } from "@/lib/fuzzyMatch";
 
 type Department = {
   name: string;
