@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Heart, Brain, Bone, Baby, Eye, Stethoscope, Activity, Pill, Hand, MapPin, CheckCircle2,
+  Ear, Smile, Microscope, Scan, Syringe, FlaskConical, Bandage, HeartPulse, Droplet, Wind,
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
