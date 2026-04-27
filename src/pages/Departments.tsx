@@ -53,13 +53,27 @@ const Departments = () => {
     if (q) setQuery(q);
   }, [params]);
 
-  const filtered = useMemo(() => {
+  const scored = useMemo(() => {
     const inCategory = DEPARTMENTS.filter(
       (d) => category === "All" || d.category === category
     );
-    if (!query.trim()) return inCategory;
-    return fuzzySearch(inCategory, query, (d) => [d.name, d.category, d.wing]).map((r) => r.item);
+    if (!query.trim()) return inCategory.map((item) => ({ item, score: 0 }));
+    return fuzzySearch(inCategory, query, (d) => [d.name, d.category, d.wing]);
   }, [query, category]);
+
+  const filtered = useMemo(() => scored.map((r) => r.item), [scored]);
+  const isSearching = query.trim().length > 0;
+  const topScore = isSearching && scored.length > 0 ? scored[0].score : 0;
+  // Highlight strong matches: the top result, plus any near-equal scores
+  const highlightedNames = useMemo(() => {
+    if (!isSearching || topScore === 0) return new Set<string>();
+    return new Set(
+      scored
+        .filter((r) => r.score >= topScore - 50)
+        .slice(0, 3)
+        .map((r) => r.item.name)
+    );
+  }, [scored, isSearching, topScore]);
 
   const suggestions: SearchSuggestion[] = useMemo(
     () =>
