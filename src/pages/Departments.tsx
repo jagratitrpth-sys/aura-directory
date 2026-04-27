@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar, { type SearchSuggestion } from "@/components/VoiceSearchBar";
-import { fuzzySearch } from "@/lib/fuzzyMatch";
+import { fuzzySearch, scoreToStrength } from "@/lib/fuzzyMatch";
 
 type Department = {
   name: string;
