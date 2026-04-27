@@ -47,7 +47,9 @@ const VoiceSearchBar = ({
   const lastFinalRef = useRef<string>("");
   const [focused, setFocused] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
   const blurTimer = useRef<number | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const reactId = useId();
   const listboxId = `voice-search-suggestions-${reactId}`;
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
