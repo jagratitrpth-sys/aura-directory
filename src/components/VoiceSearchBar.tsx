@@ -196,22 +196,27 @@ const VoiceSearchBar = ({
       {/* Autocomplete dropdown */}
       {showSuggestions && suggestions && (
         <ul
-          id="voice-search-suggestions"
+          id={listboxId}
           role="listbox"
+          aria-label="Search suggestions"
           className="absolute z-30 left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-glow overflow-hidden animate-fade-in max-h-80 overflow-y-auto"
         >
           {suggestions.map((s, i) => {
             const active = i === activeIdx;
             return (
-              <li key={s.id} role="option" aria-selected={active}>
+              <li key={s.id} role="option" id={optionId(i)} aria-selected={active}>
                 <button
                   type="button"
+                  tabIndex={-1}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => pickSuggestion(s)}
                   onMouseEnter={() => setActiveIdx(i)}
                   className={[
                     "w-full text-left px-5 py-3 flex items-center gap-3 transition-colors border-b border-border last:border-b-0",
-                    active ? "bg-gradient-mint/15" : "hover:bg-secondary/60",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
+                    active
+                      ? "bg-gradient-mint/15 ring-2 ring-inset ring-primary/60"
+                      : "hover:bg-secondary/60",
                   ].join(" ")}
                 >
                   <Search className={`w-4 h-4 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
@@ -234,13 +239,23 @@ const VoiceSearchBar = ({
                       {STRENGTH_META[s.strength].label}
                     </span>
                   )}
-                  {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" />}
+                  {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />}
                 </button>
               </li>
             );
           })}
         </ul>
       )}
+
+      {/* Visually-hidden polite live region for screen readers */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {liveMessage}
+      </div>
 
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
         <span
