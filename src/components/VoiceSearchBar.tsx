@@ -84,6 +84,17 @@ const VoiceSearchBar = ({
     setFocused(false);
   };
 
+  // Polite screen-reader announcement: result count + currently highlighted option.
+  const liveMessage = useMemo(() => {
+    if (!showSuggestions || !suggestions || suggestions.length === 0) return "";
+    const count = suggestions.length;
+    const active = suggestions[activeIdx];
+    const countMsg = `${count} suggestion${count === 1 ? "" : "s"} available.`;
+    if (!active) return countMsg;
+    const strengthMsg = active.strength ? `, ${active.strength} match` : "";
+    return `${countMsg} ${active.label}${strengthMsg}, option ${activeIdx + 1} of ${count}.`;
+  }, [showSuggestions, suggestions, activeIdx]);
+
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions || !suggestions) return;
     if (e.key === "ArrowDown") {
