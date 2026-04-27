@@ -2,6 +2,8 @@ import { Hand, Mic, MicOff, Search, CornerDownLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
+export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
+
 export interface SearchSuggestion {
   /** Stable key for React */
   id: string;
@@ -9,7 +11,16 @@ export interface SearchSuggestion {
   label: string;
   /** Optional secondary line (e.g. generic, location) */
   hint?: string;
+  /** Optional match strength badge ("Best", "Strong", "Close", "Fuzzy") */
+  strength?: MatchStrength;
 }
+
+const STRENGTH_META: Record<MatchStrength, { label: string; classes: string }> = {
+  best:   { label: "Best",   classes: "bg-gradient-mint text-primary-foreground" },
+  strong: { label: "Strong", classes: "bg-primary/15 text-primary border border-primary/30" },
+  close:  { label: "Close",  classes: "bg-accent/20 text-accent-foreground border border-accent/40" },
+  fuzzy:  { label: "Fuzzy",  classes: "bg-muted text-muted-foreground border border-border" },
+};
 
 interface VoiceSearchBarProps {
   value: string;
