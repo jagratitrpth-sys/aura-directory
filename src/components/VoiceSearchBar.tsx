@@ -72,18 +72,21 @@ const VoiceSearchBar = ({
     if (autoStart && supported) start();
   }, [autoStart, supported, start]);
 
-  // Reset highlighted suggestion when list changes
-  useEffect(() => { setActiveIdx(0); }, [suggestions?.length, value]);
+  // Reset highlighted suggestion + dismissed flag when list/value changes
+  useEffect(() => { setActiveIdx(0); setDismissed(false); }, [suggestions?.length, value]);
 
   const toggle = () => (listening ? stop() : start());
 
   const showSuggestions =
+    !dismissed &&
     !!suggestions && suggestions.length > 0 && (focused || listening) && value.trim().length > 0;
 
   const pickSuggestion = (s: SearchSuggestion) => {
     onChange(s.label);
     onSuggestionSelect?.(s);
-    setFocused(false);
+    setDismissed(true);
+    // Keep focus on the input so the user can keep typing / refining
+    inputRef.current?.focus();
   };
 
   // Polite screen-reader announcement: result count + currently highlighted option.
