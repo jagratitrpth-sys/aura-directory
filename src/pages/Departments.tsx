@@ -53,13 +53,27 @@ const Departments = () => {
     if (q) setQuery(q);
   }, [params]);
 
-  const filtered = useMemo(() => {
+  const scored = useMemo(() => {
     const inCategory = DEPARTMENTS.filter(
       (d) => category === "All" || d.category === category
     );
-    if (!query.trim()) return inCategory;
-    return fuzzySearch(inCategory, query, (d) => [d.name, d.category, d.wing]).map((r) => r.item);
+    if (!query.trim()) return inCategory.map((item) => ({ item, score: 0 }));
+    return fuzzySearch(inCategory, query, (d) => [d.name, d.category, d.wing]);
   }, [query, category]);
+
+  const filtered = useMemo(() => scored.map((r) => r.item), [scored]);
+  const isSearching = query.trim().length > 0;
+  const topScore = isSearching && scored.length > 0 ? scored[0].score : 0;
+  // Highlight strong matches: the top result, plus any near-equal scores
+  const highlightedNames = useMemo(() => {
+    if (!isSearching || topScore === 0) return new Set<string>();
+    return new Set(
+      scored
+        .filter((r) => r.score >= topScore - 50)
+        .slice(0, 3)
+        .map((r) => r.item.name)
+    );
+  }, [scored, isSearching, topScore]);
 
   const suggestions: SearchSuggestion[] = useMemo(
     () =>
@@ -128,17 +142,37 @@ const Departments = () => {
 
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-          {filtered.map((d) => {
+          {filtered.map((d, idx) => {
             const Icon = d.Icon;
+            const isHighlighted = highlightedNames.has(d.name);
+            const isTop = isSearching && idx === 0 && topScore > 0;
             return (
               <button
                 key={d.name}
                 onClick={() => setSelected(d)}
-                className="group relative rounded-2xl glass p-6 text-left shadow-card hover:scale-[1.04] hover:border-primary/60 transition-all duration-300 border border-border"
+                className={[
+                  "group relative rounded-2xl p-6 text-left shadow-card transition-all duration-300 border",
+                  "hover:scale-[1.04] hover:border-primary/60",
+                  isHighlighted
+                    ? "glass border-primary/70 ring-2 ring-primary/40 shadow-glow scale-[1.02] animate-fade-in"
+                    : isSearching
+                    ? "glass border-border opacity-70"
+                    : "glass border-border",
+                ].join(" ")}
               >
+                {isTop && (
+                  <span className="absolute -top-2 -left-2 px-2 py-0.5 rounded-full bg-gradient-mint text-primary-foreground text-[9px] font-mono uppercase tracking-widest shadow-card">
+                    Top match
+                  </span>
+                )}
                 <Hand className="absolute top-4 right-4 w-5 h-5 text-primary/30" />
-                <div className="w-12 h-12 rounded-xl bg-ink flex items-center justify-center mb-5 group-hover:bg-gradient-mint transition-colors">
-                  <Icon className="w-6 h-6 text-ink-foreground" strokeWidth={2.4} />
+                <div
+                  className={[
+                    "w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-colors",
+                    isHighlighted ? "bg-gradient-mint" : "bg-ink group-hover:bg-gradient-mint",
+                  ].join(" ")}
+                >
+                  <Icon className={isHighlighted ? "w-6 h-6 text-primary-foreground" : "w-6 h-6 text-ink-foreground"} strokeWidth={2.4} />
                 </div>
                 <h3 className="text-xl font-serif text-ink leading-tight">{d.name}</h3>
                 <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mt-1.5">
