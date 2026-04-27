@@ -101,18 +101,36 @@ const VoiceSearchBar = ({
   }, [showSuggestions, suggestions, activeIdx]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || !suggestions) return;
+    if (!suggestions || suggestions.length === 0) return;
     if (e.key === "ArrowDown") {
+      if (!showSuggestions) { setDismissed(false); }
       e.preventDefault();
       setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1));
     } else if (e.key === "ArrowUp") {
+      if (!showSuggestions) return;
       e.preventDefault();
       setActiveIdx((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Home" && showSuggestions) {
+      e.preventDefault();
+      setActiveIdx(0);
+    } else if (e.key === "End" && showSuggestions) {
+      e.preventDefault();
+      setActiveIdx(suggestions.length - 1);
     } else if (e.key === "Enter") {
+      if (!showSuggestions) return;
       const s = suggestions[activeIdx];
-      if (s) { e.preventDefault(); pickSuggestion(s); }
+      if (s) {
+        e.preventDefault();
+        pickSuggestion(s);
+      }
     } else if (e.key === "Escape") {
-      setFocused(false);
+      if (showSuggestions) {
+        e.preventDefault();
+        e.stopPropagation();
+        setDismissed(true);
+        // Keep input focused so the user can continue typing
+        inputRef.current?.focus();
+      }
     }
   };
 
