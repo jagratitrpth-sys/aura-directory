@@ -1,5 +1,5 @@
 import { Hand, Mic, MicOff, Search, CornerDownLeft } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
@@ -48,6 +48,9 @@ const VoiceSearchBar = ({
   const [focused, setFocused] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const blurTimer = useRef<number | null>(null);
+  const reactId = useId();
+  const listboxId = `voice-search-suggestions-${reactId}`;
+  const optionId = (i: number) => `${listboxId}-opt-${i}`;
 
   const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
     useVoiceInput({
@@ -80,6 +83,17 @@ const VoiceSearchBar = ({
     onSuggestionSelect?.(s);
     setFocused(false);
   };
+
+  // Polite screen-reader announcement: result count + currently highlighted option.
+  const liveMessage = useMemo(() => {
+    if (!showSuggestions || !suggestions || suggestions.length === 0) return "";
+    const count = suggestions.length;
+    const active = suggestions[activeIdx];
+    const countMsg = `${count} suggestion${count === 1 ? "" : "s"} available.`;
+    if (!active) return countMsg;
+    const strengthMsg = active.strength ? `, ${active.strength} match` : "";
+    return `${countMsg} ${active.label}${strengthMsg}, option ${activeIdx + 1} of ${count}.`;
+  }, [showSuggestions, suggestions, activeIdx]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions || !suggestions) return;
@@ -133,10 +147,16 @@ const VoiceSearchBar = ({
             blurTimer.current = window.setTimeout(() => setFocused(false), 150);
           }}
           placeholder={listening ? "Listening… speak now" : placeholder}
+          role="combobox"
           aria-autocomplete="list"
           aria-expanded={showSuggestions}
-          aria-controls="voice-search-suggestions"
-          className="flex-1 bg-transparent outline-none text-lg md:text-xl text-ink placeholder:text-muted-foreground font-medium"
+          aria-controls={listboxId}
+          aria-activedescendant={
+            showSuggestions && suggestions && suggestions[activeIdx]
+              ? optionId(activeIdx)
+              : undefined
+          }
+          className="flex-1 bg-transparent outline-none text-lg md:text-xl text-ink placeholder:text-muted-foreground font-medium rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         />
         <Hand className="w-5 h-5 text-primary/40 hidden sm:block" />
         <button
@@ -146,6 +166,7 @@ const VoiceSearchBar = ({
           aria-pressed={listening}
           className={[
             "relative w-12 h-12 rounded-full flex items-center justify-center transition-all shrink-0",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
             listening
               ? "bg-gradient-mint text-primary-foreground shadow-glow"
               : retryCountdown > 0
@@ -175,22 +196,27 @@ const VoiceSearchBar = ({
       {/* Autocomplete dropdown */}
       {showSuggestions && suggestions && (
         <ul
-          id="voice-search-suggestions"
+          id={listboxId}
           role="listbox"
+          aria-label="Search suggestions"
           className="absolute z-30 left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-glow overflow-hidden animate-fade-in max-h-80 overflow-y-auto"
         >
           {suggestions.map((s, i) => {
             const active = i === activeIdx;
             return (
-              <li key={s.id} role="option" aria-selected={active}>
+              <li key={s.id} role="option" id={optionId(i)} aria-selected={active}>
                 <button
                   type="button"
+                  tabIndex={-1}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => pickSuggestion(s)}
                   onMouseEnter={() => setActiveIdx(i)}
                   className={[
                     "w-full text-left px-5 py-3 flex items-center gap-3 transition-colors border-b border-border last:border-b-0",
-                    active ? "bg-gradient-mint/15" : "hover:bg-secondary/60",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
+                    active
+                      ? "bg-gradient-mint/15 ring-2 ring-inset ring-primary/60"
+                      : "hover:bg-secondary/60",
                   ].join(" ")}
                 >
                   <Search className={`w-4 h-4 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
@@ -213,13 +239,23 @@ const VoiceSearchBar = ({
                       {STRENGTH_META[s.strength].label}
                     </span>
                   )}
-                  {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" />}
+                  {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />}
                 </button>
               </li>
             );
           })}
         </ul>
       )}
+
+      {/* Visually-hidden polite live region for screen readers */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {liveMessage}
+      </div>
 
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
         <span
