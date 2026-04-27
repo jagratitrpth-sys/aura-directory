@@ -63,20 +63,22 @@ const Medicine = () => {
     if (q) setQuery(q);
   }, [params]);
 
-  const filtered = useMemo(
-    () =>
-      fuzzySearch(MEDICINES, query, (m) => [m.name, m.generic]).map((r) => r.item),
+  const scored = useMemo(
+    () => fuzzySearch(MEDICINES, query, (m) => [m.name, m.generic]),
     [query]
   );
+  const filtered = useMemo(() => scored.map((r) => r.item), [scored]);
+  const isSearching = query.trim().length > 0;
 
   const suggestions: SearchSuggestion[] = useMemo(
     () =>
-      filtered.slice(0, 6).map((m) => ({
+      scored.slice(0, 6).map(({ item: m, score }) => ({
         id: m.name,
         label: m.name,
         hint: `${m.generic} · ${stockMeta[m.stock].label}`,
+        strength: isSearching ? scoreToStrength(score) : undefined,
       })),
-    [filtered]
+    [scored, isSearching]
   );
 
   const featured = filtered[0];
