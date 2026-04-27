@@ -2,6 +2,8 @@ import { Hand, Mic, MicOff, Search, CornerDownLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
+export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
+
 export interface SearchSuggestion {
   /** Stable key for React */
   id: string;
@@ -9,7 +11,16 @@ export interface SearchSuggestion {
   label: string;
   /** Optional secondary line (e.g. generic, location) */
   hint?: string;
+  /** Optional match strength badge ("Best", "Strong", "Close", "Fuzzy") */
+  strength?: MatchStrength;
 }
+
+const STRENGTH_META: Record<MatchStrength, { label: string; classes: string }> = {
+  best:   { label: "Best",   classes: "bg-gradient-mint text-primary-foreground" },
+  strong: { label: "Strong", classes: "bg-primary/15 text-primary border border-primary/30" },
+  close:  { label: "Close",  classes: "bg-accent/20 text-accent-foreground border border-accent/40" },
+  fuzzy:  { label: "Fuzzy",  classes: "bg-muted text-muted-foreground border border-border" },
+};
 
 interface VoiceSearchBarProps {
   value: string;
@@ -191,6 +202,17 @@ const VoiceSearchBar = ({
                       </p>
                     )}
                   </div>
+                  {s.strength && (
+                    <span
+                      className={[
+                        "shrink-0 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-widest",
+                        STRENGTH_META[s.strength].classes,
+                      ].join(" ")}
+                      aria-label={`Match strength: ${STRENGTH_META[s.strength].label}`}
+                    >
+                      {STRENGTH_META[s.strength].label}
+                    </span>
+                  )}
                   {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" />}
                 </button>
               </li>

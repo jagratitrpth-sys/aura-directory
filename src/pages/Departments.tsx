@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import KioskHeader from "@/components/KioskHeader";
 import VoiceSearchBar, { type SearchSuggestion } from "@/components/VoiceSearchBar";
-import { fuzzySearch } from "@/lib/fuzzyMatch";
+import { fuzzySearch, scoreToStrength } from "@/lib/fuzzyMatch";
 
 type Department = {
   name: string;
@@ -77,12 +77,13 @@ const Departments = () => {
 
   const suggestions: SearchSuggestion[] = useMemo(
     () =>
-      filtered.slice(0, 6).map((d) => ({
+      scored.slice(0, 6).map(({ item: d, score }) => ({
         id: d.name,
         label: d.name,
         hint: `${d.floor} · ${d.wing}`,
+        strength: isSearching ? scoreToStrength(score) : undefined,
       })),
-    [filtered]
+    [scored, isSearching]
   );
 
   const handleConfirm = () => {

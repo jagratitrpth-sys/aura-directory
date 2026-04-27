@@ -95,3 +95,20 @@ export function fuzzySearch<T>(
   scored.sort((a, b) => b.score - a.score);
   return scored;
 }
+
+/**
+ * Map a fuzzyScore() value to a coarse strength bucket for UI badges.
+ * Tiers align with the score ranges produced by fuzzyScore():
+ *   exact / token-exact: ≥ 850   → "best"
+ *   prefix / contains:   ≥ 700   → "strong"
+ *   small edit-distance: ≥ 500   → "close"
+ *   anything else > 0:           → "fuzzy"
+ */
+export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
+export function scoreToStrength(score: number): MatchStrength | undefined {
+  if (score <= 0) return undefined;
+  if (score >= 850) return "best";
+  if (score >= 700) return "strong";
+  if (score >= 500) return "close";
+  return "fuzzy";
+}
