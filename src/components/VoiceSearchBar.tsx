@@ -47,7 +47,9 @@ const VoiceSearchBar = ({
   const lastFinalRef = useRef<string>("");
   const [focused, setFocused] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
   const blurTimer = useRef<number | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const reactId = useId();
   const listboxId = `voice-search-suggestions-${reactId}`;
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
@@ -70,18 +72,21 @@ const VoiceSearchBar = ({
     if (autoStart && supported) start();
   }, [autoStart, supported, start]);
 
-  // Reset highlighted suggestion when list changes
-  useEffect(() => { setActiveIdx(0); }, [suggestions?.length, value]);
+  // Reset highlighted suggestion + dismissed flag when list/value changes
+  useEffect(() => { setActiveIdx(0); setDismissed(false); }, [suggestions?.length, value]);
 
   const toggle = () => (listening ? stop() : start());
 
   const showSuggestions =
+    !dismissed &&
     !!suggestions && suggestions.length > 0 && (focused || listening) && value.trim().length > 0;
 
   const pickSuggestion = (s: SearchSuggestion) => {
     onChange(s.label);
     onSuggestionSelect?.(s);
-    setFocused(false);
+    setDismissed(true);
+    // Keep focus on the input so the user can keep typing / refining
+    inputRef.current?.focus();
   };
 
   // Polite screen-reader announcement: result count + currently highlighted option.
@@ -96,18 +101,36 @@ const VoiceSearchBar = ({
   }, [showSuggestions, suggestions, activeIdx]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || !suggestions) return;
+    if (!suggestions || suggestions.length === 0) return;
     if (e.key === "ArrowDown") {
+      if (!showSuggestions) { setDismissed(false); }
       e.preventDefault();
       setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1));
     } else if (e.key === "ArrowUp") {
+      if (!showSuggestions) return;
       e.preventDefault();
       setActiveIdx((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Home" && showSuggestions) {
+      e.preventDefault();
+      setActiveIdx(0);
+    } else if (e.key === "End" && showSuggestions) {
+      e.preventDefault();
+      setActiveIdx(suggestions.length - 1);
     } else if (e.key === "Enter") {
+      if (!showSuggestions) return;
       const s = suggestions[activeIdx];
-      if (s) { e.preventDefault(); pickSuggestion(s); }
+      if (s) {
+        e.preventDefault();
+        pickSuggestion(s);
+      }
     } else if (e.key === "Escape") {
-      setFocused(false);
+      if (showSuggestions) {
+        e.preventDefault();
+        e.stopPropagation();
+        setDismissed(true);
+        // Keep input focused so the user can continue typing
+        inputRef.current?.focus();
+      }
     }
   };
 
@@ -135,8 +158,9 @@ const VoiceSearchBar = ({
       <div className="relative flex items-center gap-4 glass rounded-2xl px-5 py-4 shadow-card">
         <Search className="w-6 h-6 text-ink shrink-0" strokeWidth={2.4} />
         <input
+          ref={inputRef}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => { onChange(e.target.value); setDismissed(false); }}
           onKeyDown={handleKey}
           onFocus={() => {
             if (blurTimer.current) window.clearTimeout(blurTimer.current);
