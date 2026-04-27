@@ -158,8 +158,9 @@ const VoiceSearchBar = ({
       <div className="relative flex items-center gap-4 glass rounded-2xl px-5 py-4 shadow-card">
         <Search className="w-6 h-6 text-ink shrink-0" strokeWidth={2.4} />
         <input
+          ref={inputRef}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => { onChange(e.target.value); setDismissed(false); }}
           onKeyDown={handleKey}
           onFocus={() => {
             if (blurTimer.current) window.clearTimeout(blurTimer.current);
