@@ -147,10 +147,16 @@ const VoiceSearchBar = ({
             blurTimer.current = window.setTimeout(() => setFocused(false), 150);
           }}
           placeholder={listening ? "Listening… speak now" : placeholder}
+          role="combobox"
           aria-autocomplete="list"
           aria-expanded={showSuggestions}
-          aria-controls="voice-search-suggestions"
-          className="flex-1 bg-transparent outline-none text-lg md:text-xl text-ink placeholder:text-muted-foreground font-medium"
+          aria-controls={listboxId}
+          aria-activedescendant={
+            showSuggestions && suggestions && suggestions[activeIdx]
+              ? optionId(activeIdx)
+              : undefined
+          }
+          className="flex-1 bg-transparent outline-none text-lg md:text-xl text-ink placeholder:text-muted-foreground font-medium rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         />
         <Hand className="w-5 h-5 text-primary/40 hidden sm:block" />
         <button
@@ -160,6 +166,7 @@ const VoiceSearchBar = ({
           aria-pressed={listening}
           className={[
             "relative w-12 h-12 rounded-full flex items-center justify-center transition-all shrink-0",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
             listening
               ? "bg-gradient-mint text-primary-foreground shadow-glow"
               : retryCountdown > 0
