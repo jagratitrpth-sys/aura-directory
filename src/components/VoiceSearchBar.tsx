@@ -1,5 +1,5 @@
 import { Hand, Mic, MicOff, Search, CornerDownLeft } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
