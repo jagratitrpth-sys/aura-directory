@@ -202,6 +202,17 @@ const VoiceSearchBar = ({
                       </p>
                     )}
                   </div>
+                  {s.strength && (
+                    <span
+                      className={[
+                        "shrink-0 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-widest",
+                        STRENGTH_META[s.strength].classes,
+                      ].join(" ")}
+                      aria-label={`Match strength: ${STRENGTH_META[s.strength].label}`}
+                    >
+                      {STRENGTH_META[s.strength].label}
+                    </span>
+                  )}
                   {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" />}
                 </button>
               </li>
