@@ -178,7 +178,7 @@ const VoiceSearchBar = ({
     : "Tap mic and speak";
 
   return (
-    <div className="relative w-full max-w-3xl mx-auto">
+    <div ref={wrapperRef} className="relative w-full max-w-3xl mx-auto">
       <div className="absolute -inset-4 bg-gradient-aurora opacity-25 blur-3xl rounded-full pointer-events-none" />
       <div className="relative flex items-center gap-4 glass rounded-2xl px-5 py-4 shadow-card">
         <Search className="w-6 h-6 text-ink shrink-0" strokeWidth={2.4} />
@@ -188,11 +188,20 @@ const VoiceSearchBar = ({
           onChange={(e) => { onChange(e.target.value); setDismissed(false); }}
           onKeyDown={handleKey}
           onFocus={() => {
-            if (blurTimer.current) window.clearTimeout(blurTimer.current);
+            if (blurTimer.current) {
+              window.clearTimeout(blurTimer.current);
+              blurTimer.current = null;
+            }
             setFocused(true);
           }}
-          onBlur={() => {
+          onBlur={(e) => {
+            // If focus moved to something inside our wrapper (mic button,
+            // a suggestion option, etc.), treat the input as still "focused"
+            // for dropdown-visibility purposes — no blur loop.
+            const next = e.relatedTarget as Node | null;
+            if (next && wrapperRef.current?.contains(next)) return;
             // Delay so click on a suggestion still registers
+            if (blurTimer.current) window.clearTimeout(blurTimer.current);
             blurTimer.current = window.setTimeout(() => setFocused(false), 150);
           }}
           placeholder={listening ? "Listening… speak now" : placeholder}
