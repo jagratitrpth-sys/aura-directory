@@ -50,6 +50,7 @@ const VoiceSearchBar = ({
   const [dismissed, setDismissed] = useState(false);
   const blurTimer = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const reactId = useId();
   const listboxId = `voice-search-suggestions-${reactId}`;
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
@@ -74,6 +75,30 @@ const VoiceSearchBar = ({
 
   // Reset highlighted suggestion + dismissed flag when list/value changes
   useEffect(() => { setActiveIdx(0); setDismissed(false); }, [suggestions?.length, value]);
+
+  // Outside-click / focus-loss handling: dismiss dropdown when interaction
+  // moves outside the wrapper, but leave the input's own focus state alone
+  // so keyboard navigation isn't disrupted by spurious blur loops.
+  useEffect(() => {
+    const handlePointerDown = (e: PointerEvent) => {
+      const root = wrapperRef.current;
+      if (!root) return;
+      const target = e.target as Node | null;
+      if (target && root.contains(target)) return; // click inside — ignore
+      // Outside click: collapse the suggestion list. Don't force-blur the
+      // input — let the browser's native focus transition handle it.
+      setDismissed(true);
+      if (blurTimer.current) {
+        window.clearTimeout(blurTimer.current);
+        blurTimer.current = null;
+      }
+      setFocused(false);
+    };
+    // pointerdown fires before blur, so suggestion clicks (which preventDefault
+    // their mousedown) still register correctly inside the wrapper.
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
 
   const toggle = () => (listening ? stop() : start());
 
@@ -153,7 +178,7 @@ const VoiceSearchBar = ({
     : "Tap mic and speak";
 
   return (
-    <div className="relative w-full max-w-3xl mx-auto">
+    <div ref={wrapperRef} className="relative w-full max-w-3xl mx-auto">
       <div className="absolute -inset-4 bg-gradient-aurora opacity-25 blur-3xl rounded-full pointer-events-none" />
       <div className="relative flex items-center gap-4 glass rounded-2xl px-5 py-4 shadow-card">
         <Search className="w-6 h-6 text-ink shrink-0" strokeWidth={2.4} />
@@ -163,11 +188,20 @@ const VoiceSearchBar = ({
           onChange={(e) => { onChange(e.target.value); setDismissed(false); }}
           onKeyDown={handleKey}
           onFocus={() => {
-            if (blurTimer.current) window.clearTimeout(blurTimer.current);
+            if (blurTimer.current) {
+              window.clearTimeout(blurTimer.current);
+              blurTimer.current = null;
+            }
             setFocused(true);
           }}
-          onBlur={() => {
+          onBlur={(e) => {
+            // If focus moved to something inside our wrapper (mic button,
+            // a suggestion option, etc.), treat the input as still "focused"
+            // for dropdown-visibility purposes — no blur loop.
+            const next = e.relatedTarget as Node | null;
+            if (next && wrapperRef.current?.contains(next)) return;
             // Delay so click on a suggestion still registers
+            if (blurTimer.current) window.clearTimeout(blurTimer.current);
             blurTimer.current = window.setTimeout(() => setFocused(false), 150);
           }}
           placeholder={listening ? "Listening… speak now" : placeholder}
