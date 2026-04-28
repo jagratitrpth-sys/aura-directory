@@ -76,6 +76,30 @@ const VoiceSearchBar = ({
   // Reset highlighted suggestion + dismissed flag when list/value changes
   useEffect(() => { setActiveIdx(0); setDismissed(false); }, [suggestions?.length, value]);
 
+  // Outside-click / focus-loss handling: dismiss dropdown when interaction
+  // moves outside the wrapper, but leave the input's own focus state alone
+  // so keyboard navigation isn't disrupted by spurious blur loops.
+  useEffect(() => {
+    const handlePointerDown = (e: PointerEvent) => {
+      const root = wrapperRef.current;
+      if (!root) return;
+      const target = e.target as Node | null;
+      if (target && root.contains(target)) return; // click inside — ignore
+      // Outside click: collapse the suggestion list. Don't force-blur the
+      // input — let the browser's native focus transition handle it.
+      setDismissed(true);
+      if (blurTimer.current) {
+        window.clearTimeout(blurTimer.current);
+        blurTimer.current = null;
+      }
+      setFocused(false);
+    };
+    // pointerdown fires before blur, so suggestion clicks (which preventDefault
+    // their mousedown) still register correctly inside the wrapper.
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
+
   const toggle = () => (listening ? stop() : start());
 
   const showSuggestions =
