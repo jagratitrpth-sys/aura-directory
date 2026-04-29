@@ -261,13 +261,29 @@ const VoiceSearchBar = ({
       </div>
 
       {/* Autocomplete dropdown */}
-      {showSuggestions && suggestions && (
+      {showSuggestions && (
         <ul
           id={listboxId}
           role="listbox"
           aria-label="Search suggestions"
+          aria-busy={loading}
           className="absolute z-30 left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-glow overflow-hidden animate-fade-in max-h-80 overflow-y-auto"
         >
+          {loading && (!suggestions || suggestions.length === 0) ? (
+            <li role="presentation" className="px-5 py-3 space-y-3" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <Skeleton className="w-4 h-4 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-2.5 w-1/3" />
+                  </div>
+                  <Skeleton className="h-4 w-12 rounded-full shrink-0" />
+                </div>
+              ))}
+              <span className="sr-only">Loading suggestions…</span>
+            </li>
+          ) : suggestions ? (
           {suggestions.map((s, i) => {
             const active = i === activeIdx;
             return (
