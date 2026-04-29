@@ -105,9 +105,12 @@ const VoiceSearchBar = ({
 
   const toggle = () => (listening ? stop() : start());
 
+  const hasSuggestions = !!suggestions && suggestions.length > 0;
   const showSuggestions =
     !dismissed &&
-    !!suggestions && suggestions.length > 0 && (focused || listening) && value.trim().length > 0;
+    (focused || listening) &&
+    value.trim().length > 0 &&
+    (hasSuggestions || loading);
 
   const pickSuggestion = (s: SearchSuggestion) => {
     onChange(s.label);
@@ -117,16 +120,18 @@ const VoiceSearchBar = ({
     inputRef.current?.focus();
   };
 
-  // Polite screen-reader announcement: result count + currently highlighted option.
+  // Polite screen-reader announcement: loading state, result count + currently highlighted option.
   const liveMessage = useMemo(() => {
-    if (!showSuggestions || !suggestions || suggestions.length === 0) return "";
+    if (!showSuggestions) return "";
+    if (loading) return "Loading suggestions…";
+    if (!suggestions || suggestions.length === 0) return "";
     const count = suggestions.length;
     const active = suggestions[activeIdx];
     const countMsg = `${count} suggestion${count === 1 ? "" : "s"} available.`;
     if (!active) return countMsg;
     const strengthMsg = active.strength ? `, ${active.strength} match` : "";
     return `${countMsg} ${active.label}${strengthMsg}, option ${activeIdx + 1} of ${count}.`;
-  }, [showSuggestions, suggestions, activeIdx]);
+  }, [showSuggestions, loading, suggestions, activeIdx]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!suggestions || suggestions.length === 0) return;
