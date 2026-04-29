@@ -33,6 +33,8 @@ interface VoiceSearchBarProps {
   suggestions?: SearchSuggestion[];
   /** Called when the user picks a suggestion (click / Enter). */
   onSuggestionSelect?: (s: SearchSuggestion) => void;
+  /** When true, show skeleton placeholders in place of suggestions. */
+  loading?: boolean;
 }
 
 const VoiceSearchBar = ({
