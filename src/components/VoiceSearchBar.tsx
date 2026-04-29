@@ -1,6 +1,7 @@
 import { Hand, Mic, MicOff, Search, CornerDownLeft } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
 
