@@ -45,6 +45,7 @@ const VoiceSearchBar = ({
   onFinalTranscript,
   suggestions,
   onSuggestionSelect,
+  loading = false,
 }: VoiceSearchBarProps) => {
   const lastFinalRef = useRef<string>("");
   const [focused, setFocused] = useState(false);
