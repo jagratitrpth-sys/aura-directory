@@ -1,6 +1,7 @@
 import { Hand, Mic, MicOff, Search, CornerDownLeft } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
 
@@ -33,6 +34,8 @@ interface VoiceSearchBarProps {
   suggestions?: SearchSuggestion[];
   /** Called when the user picks a suggestion (click / Enter). */
   onSuggestionSelect?: (s: SearchSuggestion) => void;
+  /** When true, show skeleton placeholders in place of suggestions. */
+  loading?: boolean;
 }
 
 const VoiceSearchBar = ({
@@ -43,6 +46,7 @@ const VoiceSearchBar = ({
   onFinalTranscript,
   suggestions,
   onSuggestionSelect,
+  loading = false,
 }: VoiceSearchBarProps) => {
   const lastFinalRef = useRef<string>("");
   const [focused, setFocused] = useState(false);
@@ -102,9 +106,12 @@ const VoiceSearchBar = ({
 
   const toggle = () => (listening ? stop() : start());
 
+  const hasSuggestions = !!suggestions && suggestions.length > 0;
   const showSuggestions =
     !dismissed &&
-    !!suggestions && suggestions.length > 0 && (focused || listening) && value.trim().length > 0;
+    (focused || listening) &&
+    value.trim().length > 0 &&
+    (hasSuggestions || loading);
 
   const pickSuggestion = (s: SearchSuggestion) => {
     onChange(s.label);
@@ -114,16 +121,18 @@ const VoiceSearchBar = ({
     inputRef.current?.focus();
   };
 
-  // Polite screen-reader announcement: result count + currently highlighted option.
+  // Polite screen-reader announcement: loading state, result count + currently highlighted option.
   const liveMessage = useMemo(() => {
-    if (!showSuggestions || !suggestions || suggestions.length === 0) return "";
+    if (!showSuggestions) return "";
+    if (loading) return "Loading suggestions…";
+    if (!suggestions || suggestions.length === 0) return "";
     const count = suggestions.length;
     const active = suggestions[activeIdx];
     const countMsg = `${count} suggestion${count === 1 ? "" : "s"} available.`;
     if (!active) return countMsg;
     const strengthMsg = active.strength ? `, ${active.strength} match` : "";
     return `${countMsg} ${active.label}${strengthMsg}, option ${activeIdx + 1} of ${count}.`;
-  }, [showSuggestions, suggestions, activeIdx]);
+  }, [showSuggestions, loading, suggestions, activeIdx]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!suggestions || suggestions.length === 0) return;
@@ -252,56 +261,73 @@ const VoiceSearchBar = ({
       </div>
 
       {/* Autocomplete dropdown */}
-      {showSuggestions && suggestions && (
+      {showSuggestions && (
         <ul
           id={listboxId}
           role="listbox"
           aria-label="Search suggestions"
+          aria-busy={loading}
           className="absolute z-30 left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-glow overflow-hidden animate-fade-in max-h-80 overflow-y-auto"
         >
-          {suggestions.map((s, i) => {
-            const active = i === activeIdx;
-            return (
-              <li key={s.id} role="option" id={optionId(i)} aria-selected={active}>
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => pickSuggestion(s)}
-                  onMouseEnter={() => setActiveIdx(i)}
-                  className={[
-                    "w-full text-left px-5 py-3 flex items-center gap-3 transition-colors border-b border-border last:border-b-0",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
-                    active
-                      ? "bg-gradient-mint/15 ring-2 ring-inset ring-primary/60"
-                      : "hover:bg-secondary/60",
-                  ].join(" ")}
-                >
-                  <Search className={`w-4 h-4 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-serif text-base text-ink truncate">{s.label}</p>
-                    {s.hint && (
-                      <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground truncate">
-                        {s.hint}
-                      </p>
-                    )}
+          {loading && (!suggestions || suggestions.length === 0) ? (
+            <li role="presentation" className="px-5 py-3 space-y-3" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <Skeleton className="w-4 h-4 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-2.5 w-1/3" />
                   </div>
-                  {s.strength && (
-                    <span
-                      className={[
-                        "shrink-0 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-widest",
-                        STRENGTH_META[s.strength].classes,
-                      ].join(" ")}
-                      aria-label={`Match strength: ${STRENGTH_META[s.strength].label}`}
-                    >
-                      {STRENGTH_META[s.strength].label}
-                    </span>
-                  )}
-                  {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />}
-                </button>
-              </li>
-            );
-          })}
+                  <Skeleton className="h-4 w-12 rounded-full shrink-0" />
+                </div>
+              ))}
+              <span className="sr-only">Loading suggestions…</span>
+            </li>
+          ) : suggestions ? (
+            suggestions.map((s, i) => {
+              const active = i === activeIdx;
+              return (
+                <li key={s.id} role="option" id={optionId(i)} aria-selected={active}>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => pickSuggestion(s)}
+                    onMouseEnter={() => setActiveIdx(i)}
+                    className={[
+                      "w-full text-left px-5 py-3 flex items-center gap-3 transition-colors border-b border-border last:border-b-0",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
+                      active
+                        ? "bg-gradient-mint/15 ring-2 ring-inset ring-primary/60"
+                        : "hover:bg-secondary/60",
+                    ].join(" ")}
+                  >
+                    <Search className={`w-4 h-4 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-serif text-base text-ink truncate">{s.label}</p>
+                      {s.hint && (
+                        <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground truncate">
+                          {s.hint}
+                        </p>
+                      )}
+                    </div>
+                    {s.strength && (
+                      <span
+                        className={[
+                          "shrink-0 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-widest",
+                          STRENGTH_META[s.strength].classes,
+                        ].join(" ")}
+                        aria-label={`Match strength: ${STRENGTH_META[s.strength].label}`}
+                      >
+                        {STRENGTH_META[s.strength].label}
+                      </span>
+                    )}
+                    {active && <CornerDownLeft className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />}
+                  </button>
+                </li>
+              );
+            })
+          ) : null}
         </ul>
       )}
 
