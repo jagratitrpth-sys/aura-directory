@@ -124,6 +124,7 @@ const Departments = () => {
           onChange={setQuery}
           placeholder="Say or type a department name…"
           suggestions={suggestions}
+          loading={suggestionsLoading}
           onSuggestionSelect={(s) => {
             const found = DEPARTMENTS.find((d) => d.name === s.id);
             if (found) setSelected(found);
