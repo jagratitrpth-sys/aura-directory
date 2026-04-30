@@ -112,6 +112,7 @@ const Medicine = () => {
           onChange={setQuery}
           placeholder="Search by medicine name or generic…"
           suggestions={suggestions}
+          loading={suggestionsLoading}
           onSuggestionSelect={(s) => {
             const found = MEDICINES.find((m) => m.name === s.id);
             if (found) setSelected(found);
