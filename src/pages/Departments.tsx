@@ -46,7 +46,17 @@ const Departments = () => {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
   const [selected, setSelected] = useState<Department | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Brief debounced "computing" state so the autocomplete shows a skeleton
+  // while fuzzy results settle — matches the Medicines page behavior.
+  useEffect(() => {
+    if (!query.trim()) { setSuggestionsLoading(false); return; }
+    setSuggestionsLoading(true);
+    const t = window.setTimeout(() => setSuggestionsLoading(false), 180);
+    return () => window.clearTimeout(t);
+  }, [query, category]);
 
   useEffect(() => {
     const q = params.get("q");
@@ -114,6 +124,7 @@ const Departments = () => {
           onChange={setQuery}
           placeholder="Say or type a department name…"
           suggestions={suggestions}
+          loading={suggestionsLoading}
           onSuggestionSelect={(s) => {
             const found = DEPARTMENTS.find((d) => d.name === s.id);
             if (found) setSelected(found);
