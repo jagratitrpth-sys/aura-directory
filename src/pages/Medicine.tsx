@@ -57,11 +57,21 @@ const Medicine = () => {
   const [params] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") || "Paracetamol");
   const [selected, setSelected] = useState<Medicine | null>(null);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
   useEffect(() => {
     const q = params.get("q");
     if (q) setQuery(q);
   }, [params]);
+
+  // Brief debounced "computing" state so the autocomplete shows a skeleton
+  // while fuzzy results settle — matches the Departments page behavior.
+  useEffect(() => {
+    if (!query.trim()) { setSuggestionsLoading(false); return; }
+    setSuggestionsLoading(true);
+    const t = window.setTimeout(() => setSuggestionsLoading(false), 180);
+    return () => window.clearTimeout(t);
+  }, [query]);
 
   const scored = useMemo(
     () => fuzzySearch(MEDICINES, query, (m) => [m.name, m.generic]),
