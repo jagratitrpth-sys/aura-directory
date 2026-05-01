@@ -60,6 +60,8 @@ const VoiceSearchBar = ({
   const listboxId = `voice-search-suggestions-${reactId}`;
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
 
+  const online = useOnlineStatus();
+
   const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
     useVoiceInput({
       onFinalResult: (text) => {
