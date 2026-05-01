@@ -1,6 +1,7 @@
-import { Hand, Mic, MicOff, Search, CornerDownLeft } from "lucide-react";
+import { Hand, Mic, MicOff, Search, CornerDownLeft, WifiOff } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
@@ -58,6 +59,8 @@ const VoiceSearchBar = ({
   const reactId = useId();
   const listboxId = `voice-search-suggestions-${reactId}`;
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
+
+  const online = useOnlineStatus();
 
   const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
     useVoiceInput({
@@ -355,7 +358,20 @@ const VoiceSearchBar = ({
         >
           {statusLabel}
         </span>
-        <span className="text-xs font-mono text-muted-foreground shrink-0">EN-US</span>
+        <div className="flex items-center gap-2 shrink-0">
+          {!online && (
+            <span
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent/20 border border-accent/40 text-accent-foreground text-[10px] font-mono uppercase tracking-widest animate-fade-in"
+              role="status"
+              aria-live="polite"
+              title="You're offline. Search still works with the on-device list."
+            >
+              <WifiOff className="w-3 h-3" aria-hidden="true" />
+              Offline · search still works
+            </span>
+          )}
+          <span className="text-xs font-mono text-muted-foreground">EN-US</span>
+        </div>
       </div>
 
       {lastHeard && (
