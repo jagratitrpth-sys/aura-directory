@@ -171,7 +171,9 @@ const VoiceSearchBar = ({
     }
   };
 
-  const statusLabel = !supported
+  const statusLabel = !online
+    ? "Offline — voice paused, but typing & suggestions still work"
+    : !supported
     ? "Voice unavailable in this browser — try Chrome or Edge"
     : error === "not-allowed"
     ? "Mic blocked — click 🔒 in address bar → allow microphone, then retry"
@@ -231,13 +233,22 @@ const VoiceSearchBar = ({
         <Hand className="w-5 h-5 text-primary/40 hidden sm:block" />
         <button
           onClick={toggle}
-          disabled={!supported}
-          aria-label={listening ? "Stop listening" : "Start voice input"}
+          disabled={!supported || !online}
+          aria-label={
+            !online
+              ? "Voice input unavailable while offline"
+              : listening
+              ? "Stop listening"
+              : "Start voice input"
+          }
           aria-pressed={listening}
+          title={!online ? "You're offline — voice input is paused. Typing & suggestions still work." : undefined}
           className={[
             "relative w-12 h-12 rounded-full flex items-center justify-center transition-all shrink-0",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
-            listening
+            !online
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : listening
               ? "bg-gradient-mint text-primary-foreground shadow-glow"
               : retryCountdown > 0
               ? "bg-accent text-accent-foreground"
@@ -245,13 +256,23 @@ const VoiceSearchBar = ({
             !supported && "opacity-50 cursor-not-allowed",
           ].join(" ")}
         >
-          {listening && (
+          {listening && online && (
             <>
               <span className="absolute inset-0 rounded-full bg-primary/40 animate-ring-pulse" />
               <span className="absolute inset-0 rounded-full bg-primary/30 animate-ring-pulse [animation-delay:0.6s]" />
             </>
           )}
-          {retryCountdown > 0 ? (
+          {!online ? (
+            <>
+              <MicOff className="w-5 h-5 relative" aria-hidden="true" />
+              <span
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md ring-2 ring-card"
+                aria-hidden="true"
+              >
+                <WifiOff className="w-2.5 h-2.5" />
+              </span>
+            </>
+          ) : retryCountdown > 0 ? (
             <span className="relative font-mono text-sm font-bold tabular-nums">
               {retryCountdown}
             </span>
