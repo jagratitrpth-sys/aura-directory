@@ -171,7 +171,9 @@ const VoiceSearchBar = ({
     }
   };
 
-  const statusLabel = !supported
+  const statusLabel = !online
+    ? "Offline — voice paused, but typing & suggestions still work"
+    : !supported
     ? "Voice unavailable in this browser — try Chrome or Edge"
     : error === "not-allowed"
     ? "Mic blocked — click 🔒 in address bar → allow microphone, then retry"
