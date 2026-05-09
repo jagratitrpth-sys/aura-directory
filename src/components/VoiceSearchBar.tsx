@@ -391,9 +391,41 @@ const VoiceSearchBar = ({
               Offline · search still works
             </span>
           )}
+          {!online && (
+            <a
+              href="https://support.google.com/chrome/answer/2693767"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-mono uppercase tracking-widest text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            >
+              Mic help
+            </a>
+          )}
           <span className="text-xs font-mono text-muted-foreground">EN-US</span>
         </div>
       </div>
+
+      {!online && (
+        <div
+          className="mt-2 px-3 py-2 rounded-xl bg-muted/60 border border-border flex items-start gap-2 animate-fade-in"
+          role="note"
+        >
+          <WifiOff className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            <span className="font-semibold text-ink">Voice input is paused while offline.</span>{" "}
+            Speech recognition needs an internet connection. You can still type to search — suggestions work on-device. Once you're back online, tap the mic to resume.{" "}
+            <a
+              href="https://support.google.com/chrome/answer/2693767"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            >
+              Manage microphone permissions
+            </a>
+            .
+          </p>
+        </div>
+      )}
 
       {lastHeard && (
         <div className="mt-2 px-2 flex items-center gap-2 animate-fade-in">
