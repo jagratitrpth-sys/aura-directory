@@ -391,6 +391,16 @@ const VoiceSearchBar = ({
               Offline · search still works
             </span>
           )}
+          {!online && (
+            <a
+              href="https://support.google.com/chrome/answer/2693767"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-mono uppercase tracking-widest text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            >
+              Mic help
+            </a>
+          )}
           <span className="text-xs font-mono text-muted-foreground">EN-US</span>
         </div>
       </div>
