@@ -365,6 +365,23 @@ const VoiceSearchBar = ({
         {liveMessage}
       </div>
 
+      {/* Dedicated assertive live region for mic availability changes.
+          Announces immediately when the device goes offline (mic disabled)
+          or comes back online (mic re-enabled), so screen-reader users
+          understand why voice input is paused. */}
+      <div
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {!online
+          ? "You are offline. Microphone and voice input are disabled because speech recognition requires an internet connection. You can still type to search."
+          : supported
+          ? "You are back online. Microphone and voice input are available again."
+          : ""}
+      </div>
+
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
         <span
           className={[
