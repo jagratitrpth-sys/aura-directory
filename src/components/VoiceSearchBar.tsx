@@ -61,6 +61,23 @@ const VoiceSearchBar = ({
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
 
   const online = useOnlineStatus();
+  // Track whether we've observed a connectivity change, so the assertive
+  // mic-status live region stays silent on initial mount and only announces
+  // when the user actually goes offline / comes back online.
+  const prevOnlineRef = useRef<boolean>(online);
+  const [micStatusMessage, setMicStatusMessage] = useState<string>("");
+  useEffect(() => {
+    if (prevOnlineRef.current === online) return;
+    prevOnlineRef.current = online;
+    setMicStatusMessage(
+      online
+        ? "You are back online. Microphone and voice input are available again."
+        : "You are offline. Microphone and voice input are disabled because speech recognition requires an internet connection. You can still type to search."
+    );
+    // Clear after a moment so repeated transitions re-announce.
+    const t = window.setTimeout(() => setMicStatusMessage(""), 4000);
+    return () => window.clearTimeout(t);
+  }, [online]);
 
   const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
     useVoiceInput({
