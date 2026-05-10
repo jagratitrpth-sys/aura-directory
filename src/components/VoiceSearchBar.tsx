@@ -61,6 +61,23 @@ const VoiceSearchBar = ({
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
 
   const online = useOnlineStatus();
+  // Track whether we've observed a connectivity change, so the assertive
+  // mic-status live region stays silent on initial mount and only announces
+  // when the user actually goes offline / comes back online.
+  const prevOnlineRef = useRef<boolean>(online);
+  const [micStatusMessage, setMicStatusMessage] = useState<string>("");
+  useEffect(() => {
+    if (prevOnlineRef.current === online) return;
+    prevOnlineRef.current = online;
+    setMicStatusMessage(
+      online
+        ? "You are back online. Microphone and voice input are available again."
+        : "You are offline. Microphone and voice input are disabled because speech recognition requires an internet connection. You can still type to search."
+    );
+    // Clear after a moment so repeated transitions re-announce.
+    const t = window.setTimeout(() => setMicStatusMessage(""), 4000);
+    return () => window.clearTimeout(t);
+  }, [online]);
 
   const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
     useVoiceInput({
@@ -363,6 +380,21 @@ const VoiceSearchBar = ({
         className="sr-only"
       >
         {liveMessage}
+      </div>
+
+      {/* Dedicated assertive live region for mic availability changes.
+          Announces immediately when the device goes offline (mic disabled)
+          or comes back online (mic re-enabled), so screen-reader users
+          understand why voice input is paused. */}
+      <div
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {!online
+          ? "You are offline. Microphone and voice input are disabled because speech recognition requires an internet connection. You can still type to search."
+          : micStatusMessage}
       </div>
 
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
