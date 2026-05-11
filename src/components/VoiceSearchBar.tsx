@@ -79,6 +79,13 @@ const VoiceSearchBar = ({
     return () => window.clearTimeout(t);
   }, [online]);
 
+  // Dedicated permission-denied announcement. Fires the moment the browser
+  // (or OS) blocks microphone access so screen-reader users hear *why* voice
+  // input failed and how to re-enable it, without having to hunt for the
+  // visual status text.
+  const prevPermErrorRef = useRef<string | null>(null);
+  const [permissionMessage, setPermissionMessage] = useState<string>("");
+
   const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
     useVoiceInput({
       onFinalResult: (text) => {
