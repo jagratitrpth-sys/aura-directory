@@ -424,7 +424,7 @@ const VoiceSearchBar = ({
       >
         {!online
           ? "You are offline. Microphone and voice input are disabled because speech recognition requires an internet connection. You can still type to search."
-          : micStatusMessage}
+          : permissionMessage || micStatusMessage}
       </div>
 
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
