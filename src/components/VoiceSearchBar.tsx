@@ -104,6 +104,29 @@ const VoiceSearchBar = ({
     if (autoStart && supported) start();
   }, [autoStart, supported, start]);
 
+  // Watch for microphone permission / hardware errors and announce them
+  // assertively. We only fire on transitions into an error state so the
+  // message isn't repeated on every re-render.
+  useEffect(() => {
+    const current = error ?? null;
+    if (prevPermErrorRef.current === current) return;
+    prevPermErrorRef.current = current;
+    if (current === "not-allowed") {
+      setPermissionMessage(
+        "Microphone access is blocked. Voice input is unavailable. To enable voice, click the lock icon in your browser's address bar, allow microphone access for this site, then tap the microphone button to retry. You can still type to search."
+      );
+    } else if (current === "no-microphone") {
+      setPermissionMessage(
+        "No microphone was detected on this device. Voice input is unavailable. Connect a microphone and reload the page, or type to search."
+      );
+    } else {
+      setPermissionMessage("");
+      return;
+    }
+    const t = window.setTimeout(() => setPermissionMessage(""), 6000);
+    return () => window.clearTimeout(t);
+  }, [error]);
+
   // Reset highlighted suggestion + dismissed flag when list/value changes
   useEffect(() => { setActiveIdx(0); setDismissed(false); }, [suggestions?.length, value]);
 
