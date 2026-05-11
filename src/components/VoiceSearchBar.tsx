@@ -79,6 +79,13 @@ const VoiceSearchBar = ({
     return () => window.clearTimeout(t);
   }, [online]);
 
+  // Dedicated permission-denied announcement. Fires the moment the browser
+  // (or OS) blocks microphone access so screen-reader users hear *why* voice
+  // input failed and how to re-enable it, without having to hunt for the
+  // visual status text.
+  const prevPermErrorRef = useRef<string | null>(null);
+  const [permissionMessage, setPermissionMessage] = useState<string>("");
+
   const { supported, listening, transcript, lastHeard, retryCountdown, start, stop, error } =
     useVoiceInput({
       onFinalResult: (text) => {
@@ -96,6 +103,29 @@ const VoiceSearchBar = ({
   useEffect(() => {
     if (autoStart && supported) start();
   }, [autoStart, supported, start]);
+
+  // Watch for microphone permission / hardware errors and announce them
+  // assertively. We only fire on transitions into an error state so the
+  // message isn't repeated on every re-render.
+  useEffect(() => {
+    const current = error ?? null;
+    if (prevPermErrorRef.current === current) return;
+    prevPermErrorRef.current = current;
+    if (current === "not-allowed") {
+      setPermissionMessage(
+        "Microphone access is blocked. Voice input is unavailable. To enable voice, click the lock icon in your browser's address bar, allow microphone access for this site, then tap the microphone button to retry. You can still type to search."
+      );
+    } else if (current === "no-microphone") {
+      setPermissionMessage(
+        "No microphone was detected on this device. Voice input is unavailable. Connect a microphone and reload the page, or type to search."
+      );
+    } else {
+      setPermissionMessage("");
+      return;
+    }
+    const t = window.setTimeout(() => setPermissionMessage(""), 6000);
+    return () => window.clearTimeout(t);
+  }, [error]);
 
   // Reset highlighted suggestion + dismissed flag when list/value changes
   useEffect(() => { setActiveIdx(0); setDismissed(false); }, [suggestions?.length, value]);
@@ -394,7 +424,7 @@ const VoiceSearchBar = ({
       >
         {!online
           ? "You are offline. Microphone and voice input are disabled because speech recognition requires an internet connection. You can still type to search."
-          : micStatusMessage}
+          : permissionMessage || micStatusMessage}
       </div>
 
       <div className="flex items-center justify-between mt-3 px-2 gap-3">
