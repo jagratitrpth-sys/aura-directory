@@ -3,6 +3,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getPermissionHelp } from "@/lib/permissionHelp";
 
 export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
 
