@@ -154,9 +154,18 @@ const Index = () => {
           })}
         </div>
 
-        <p className="mt-8 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground text-center">
-          ✋ Center hand on a card 2s to select · 🎙 Raise hand to start listening
-        </p>
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <button
+            onClick={() => navigate("/chat")}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-ink text-ink-foreground hover:scale-[1.03] transition-transform shadow-card"
+          >
+            <Sparkles className="w-4 h-4 text-accent" />
+            <span className="font-mono text-xs uppercase tracking-[0.2em]">Chat with the assistant</span>
+          </button>
+          <p className="text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground text-center">
+            ✋ Center hand on a card 2s to select · 🎙 Raise hand to start listening
+          </p>
+        </div>
       </section>
 
       <HandStatusBadge
