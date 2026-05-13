@@ -51,18 +51,20 @@ const HandStatusBadge = ({
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
         {enabled && error && (() => {
           const help = getPermissionHelp("camera");
+          const announcement = `Camera access is blocked, so hand-gesture tracking is paused. To enable the camera in ${help.browser}, click the lock or site-info icon in the address bar, allow camera access for this site, then tap "Enable hand tracking" again. Visit the ${help.browser} help page for step-by-step instructions: ${help.url}`;
           return (
             <div
               role="alert"
               aria-live="assertive"
               className="glass-dark text-ink-foreground text-xs font-mono uppercase tracking-wider px-3 py-2 rounded-xl shadow-ink max-w-xs flex flex-col items-end gap-1 animate-fade-in"
             >
-              <span>Camera blocked — hand tracking paused</span>
+              <span className="sr-only">{announcement}</span>
+              <span aria-hidden="true">Camera blocked — hand tracking paused</span>
               <a
                 href={help.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`How to enable camera in ${help.browser}`}
+                aria-label={`Open ${help.browser} help: how to enable camera permissions`}
                 className="text-primary-glow underline underline-offset-2 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm normal-case tracking-normal"
               >
                 How to enable camera in {help.browser}
