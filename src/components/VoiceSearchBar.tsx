@@ -482,12 +482,12 @@ const VoiceSearchBar = ({
             <span className="font-semibold text-ink">Voice input is paused while offline.</span>{" "}
             Speech recognition needs an internet connection. You can still type to search — suggestions work on-device. Once you're back online, tap the mic to resume.{" "}
             <a
-              href="https://support.google.com/chrome/answer/2693767"
+              href={getPermissionHelp("microphone").url}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
             >
-              Manage microphone permissions
+              Manage microphone permissions in {getPermissionHelp("microphone").browser}
             </a>
             .
           </p>
