@@ -1,5 +1,6 @@
 import { Hand, X, Camera } from "lucide-react";
 import { useHandRaise } from "@/hooks/useHandRaise";
+import { getPermissionHelp } from "@/lib/permissionHelp";
 
 interface HandStatusBadgeProps {
   enabled: boolean;
