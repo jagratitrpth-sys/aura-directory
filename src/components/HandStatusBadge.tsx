@@ -1,5 +1,6 @@
 import { Hand, X, Camera } from "lucide-react";
 import { useHandRaise } from "@/hooks/useHandRaise";
+import { getPermissionHelp } from "@/lib/permissionHelp";
 
 interface HandStatusBadgeProps {
   enabled: boolean;
@@ -47,7 +48,28 @@ const HandStatusBadge = ({
       )}
 
       {/* Floating control */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+        {enabled && error && (() => {
+          const help = getPermissionHelp("camera");
+          return (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="glass-dark text-ink-foreground text-xs font-mono uppercase tracking-wider px-3 py-2 rounded-xl shadow-ink max-w-xs flex flex-col items-end gap-1 animate-fade-in"
+            >
+              <span>Camera blocked — hand tracking paused</span>
+              <a
+                href={help.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`How to enable camera in ${help.browser}`}
+                className="text-primary-glow underline underline-offset-2 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm normal-case tracking-normal"
+              >
+                How to enable camera in {help.browser}
+              </a>
+            </div>
+          );
+        })()}
         <button
           onClick={onToggle}
           className={[

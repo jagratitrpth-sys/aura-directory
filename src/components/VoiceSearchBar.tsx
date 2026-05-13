@@ -3,6 +3,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getPermissionHelp } from "@/lib/permissionHelp";
 
 export type MatchStrength = "best" | "strong" | "close" | "fuzzy";
 
@@ -453,16 +454,20 @@ const VoiceSearchBar = ({
               Offline · search still works
             </span>
           )}
-          {!online && (
-            <a
-              href="https://support.google.com/chrome/answer/2693767"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] font-mono uppercase tracking-widest text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
-            >
-              Mic help
-            </a>
-          )}
+          {(!online || error === "not-allowed" || error === "no-microphone") && (() => {
+            const help = getPermissionHelp("microphone");
+            return (
+              <a
+                href={help.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`How to enable microphone in ${help.browser}`}
+                className="text-[10px] font-mono uppercase tracking-widest text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+              >
+                How to enable mic in {help.browser}
+              </a>
+            );
+          })()}
           <span className="text-xs font-mono text-muted-foreground">EN-US</span>
         </div>
       </div>
@@ -477,12 +482,12 @@ const VoiceSearchBar = ({
             <span className="font-semibold text-ink">Voice input is paused while offline.</span>{" "}
             Speech recognition needs an internet connection. You can still type to search — suggestions work on-device. Once you're back online, tap the mic to resume.{" "}
             <a
-              href="https://support.google.com/chrome/answer/2693767"
+              href={getPermissionHelp("microphone").url}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
             >
-              Manage microphone permissions
+              Manage microphone permissions in {getPermissionHelp("microphone").browser}
             </a>
             .
           </p>
